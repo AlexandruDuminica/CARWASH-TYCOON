@@ -1,6 +1,4 @@
-// Car Wash Tycoon – Clang-Tidy friendly (nodiscard, ranges::min_element, constexpr)
-// Comenzi: help, status, services, bays, bayscount, book <Service> <k>, shop,
-//          upgradehours <minutes>, upgradebay <id> <Deluxe|Wax>, endday, endrun
+// Car Wash Tycoon – Clang-Tidy/Cppcheck friendly (nodiscard, ranges::min_element, constexpr)
 
 #include <algorithm>
 #include <cctype>
@@ -40,9 +38,7 @@ public:
     [[nodiscard]] int needWax() const noexcept { return waxML_; }
 
     void applyPriceFactor(double factor) {
-        if (factor < 0.1 || factor > 10.0) {
-            throw std::invalid_argument("price factor out of range");
-        }
+        if (factor < 0.1 || factor > 10.0) throw std::invalid_argument("price factor out of range");
         price_ *= factor;
     }
 
@@ -170,8 +166,12 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const WashBay& wb) {
         os << "Bay #" << wb.id()
            << " (availAt=" << wb.availableAt() << "min"
-           << ", caps=[Basic" << (wb.canDeluxe_ ? ",Deluxe" : "")
-           << (wb.canWax_ ? ",Wax" : "") << "])";
+           << ", caps=[";
+        bool first = true;
+        if (wb.supportsBasic())  { os << "Basic"; first = false; }
+        if (wb.supportsDeluxe()) { os << (first ? "" : ",") << "Deluxe"; first = false; }
+        if (wb.supportsWax())    { os << (first ? "" : ",") << "Wax"; }
+        os << "])";
         return os;
     }
 };
@@ -201,23 +201,20 @@ class CarWash {
         if (a.size() != b.size()) return false;
         for (std::size_t i = 0; i < a.size(); ++i) {
             if (std::tolower(static_cast<unsigned char>(a[i])) !=
-                std::tolower(static_cast<unsigned char>(b[i]))) {
-                return false;
-            }
+                std::tolower(static_cast<unsigned char>(b[i]))) return false;
         }
         return true;
     }
 
     [[nodiscard]] int findServiceIndex(const std::string& n) const {
-        for (std::size_t i = 0; i < services_.size(); ++i) {
+        for (std::size_t i = 0; i < services_.size(); ++i)
             if (equalNoCase(services_[i].name(), n)) return static_cast<int>(i);
-        }
         return -1;
     }
 
 public:
     CarWash(std::string name, Inventory inv, int openAtMin, int closeAtMin)
-        : name_(std::move(name)), inventory_(inv), // nu mai folosim std::move(inv)
+        : name_(std::move(name)), inventory_(inv),
           openingMin_(openAtMin), closingMin_(closeAtMin) {}
 
     void addService(const ServicePackage& sp) { services_.push_back(sp); }
@@ -432,9 +429,7 @@ int main() {
         std::cout << "=== INITIAL STATE ===\n" << cw << "\n\n";
         cw.applyGlobalPriceFactor(1.10);
         std::cout << "--- After 10% weekend price increase ---\n";
-        for (const auto& s : cw.services()) {
-            std::cout << s << "\n";
-        }
+        for (const auto& s : cw.services()) std::cout << s << "\n";
         std::cout << "\nType `help` for commands.\n";
 
         auto printHelp = [&]() {
@@ -505,23 +500,17 @@ int main() {
                 std::cout << "How many liters of water? (max " << cw.maxAffordableWaterL() << "): ";
                 if (!std::getline(std::cin, tmp)) { break; }
                 trim(tmp);
-                if (!tmp.empty()) {
-                    try { w = std::max(0, std::stoi(tmp)); } catch (...) { w = 0; }
-                }
+                if (!tmp.empty()) { try { w = std::max(0, std::stoi(tmp)); } catch (...) { w = 0; } }
 
                 std::cout << "How many ml of shampoo? (max " << cw.maxAffordableShampooML() << "): ";
                 if (!std::getline(std::cin, tmp)) { break; }
                 trim(tmp);
-                if (!tmp.empty()) {
-                    try { s = std::max(0, std::stoi(tmp)); } catch (...) { s = 0; }
-                }
+                if (!tmp.empty()) { try { s = std::max(0, std::stoi(tmp)); } catch (...) { s = 0; } }
 
                 std::cout << "How many ml of wax? (max " << cw.maxAffordableWaxML() << "): ";
                 if (!std::getline(std::cin, tmp)) { break; }
                 trim(tmp);
-                if (!tmp.empty()) {
-                    try { x = std::max(0, std::stoi(tmp)); } catch (...) { x = 0; }
-                }
+                if (!tmp.empty()) { try { x = std::max(0, std::stoi(tmp)); } catch (...) { x = 0; } }
 
                 const double cost = cw.quotePurchaseCost(w, s, x);
                 std::cout << "Cost: " << std::fixed << std::setprecision(2) << cost
@@ -571,7 +560,7 @@ int main() {
                 cw.endDay();
                 std::cout << "New day started. Bays reset to opening time. Day = "
                           << cw.day() << ".\n";
-                printStatus(cw);  // status automat la sfârșit de zi
+                printStatus(cw);
                 std::cout << "\n";
             } else if (cmd == "endrun") {
                 break;
