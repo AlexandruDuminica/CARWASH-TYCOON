@@ -1,23 +1,24 @@
-// Car Wash Tycoon – Tema POO cu interfata text + SHOP + zile multiple
-// -------------------------------------------------------------------
+// Car Wash Tycoon – Tema POO cu: SHOP + zile + upgrade ore + upgrade per-bay
+// ---------------------------------------------------------------------------
 // Comenzi (tasteaza `help` in program):
-//   help                 -> lista comenzilor
-//   status               -> inventar, servicii, boxe, cash, ziua curenta
-//   services             -> lista serviciilor si preturile curente
-//   bays                 -> statusul boxelor (cand se elibereaza)
-//   book <Serviciu> <k>  -> programeaza k masini (Basic/Deluxe/Wax)
-//   shop                 -> cumpara apa/sampon/ceara din cash
-//   endday               -> termina ziua curenta si treci la urmatoarea (progres pe zile)
-//   endrun               -> inchide programul (afiseaza starea finala)
+//   help
+//   status                   -> inventar, servicii, bays, cash, ziua curenta, timp ramas/bay
+//   bays                     -> status detaliat bays
+//   bayscount                -> cate bays exista
+//   services                 -> lista serviciilor si preturile curente
+//   book <Service> <k>       -> planifica k masini (Service: Basic/Deluxe/Wax)
+//   shop                     -> cumpara water/shampoo/wax din cash
+//   upgradehours <minutes>   -> mareste timpul de functionare (cost/min/bay)
+//   upgradebay <id> <type>   -> adauga capabilitate pe bay (type: Deluxe|Wax)
+//   endday                   -> termina ziua curenta; ziua urmatoare incepe (bays reset la ora de deschidere)
+//   endrun                   -> inchide programul
 //
-// Cerinte POO bifate ca in versiunile anterioare:
-// - 4 clase prin compunere: ServicePackage, Inventory, WashBay, CarWash
-// - Constructori cu parametri pentru fiecare
-// - Pentru WashBay: constructor de copiere, operator=, destructor (Rule of Three)
-// - operator<< pentru TOATE clasele
-// - Functii const, metode private, functii publice non-triviale (booking, consum stoc,
-//   shop, raport, avansare zi)
-// - Scenariu in main: meniu text interactiv
+// Cerinte POO (bifate):
+// - 4 clase prin compunere (ServicePackage, Inventory, WashBay, CarWash)
+// - ctor cu parametri, operator<< pentru toate clasele
+// - pentru WashBay: Rule of Three (copy ctor, operator=, dtor)
+// - functii const/private + functii publice non-triviale (booking cu restrictii per-bay,
+//   consum stoc, shop, upgrade ore, upgrade capabilitati, raport pe zile)
 
 #include <iostream>
 #include <string>
@@ -31,9 +32,9 @@
 // ------------------------------- ServicePackage -------------------------------
 class ServicePackage {
     std::string name;
-    int durationMin;     // durata per masina
-    double price;        // incasare per masina
-    int waterL;          // consum inventar
+    int durationMin;
+    double price;
+    int waterL;
     int shampooML;
     int waxML;
 
@@ -110,8 +111,13 @@ public:
 // ---------------------------------- WashBay -----------------------------------
 class WashBay {
     int id;
-    int availableAtMin; // cand devine liber (minute din zi)
-    char* label;        // alocat dinamic
+    int availableAtMin; // minute absolute in zi
+    char* label;
+
+    // capabilitati (la start: Basic true, Deluxe/Wax false)
+    bool canBasic = true;
+    bool canDeluxe = false;
+    bool canWax = false;
 
     static char* dupCString(const std::string& s) {
         char* p = new char[s.size() + 1];
@@ -125,7 +131,8 @@ public:
 
     // Rule of Three
     WashBay(const WashBay& other)
-        : id(other.id), availableAtMin(other.availableAtMin), label(dupCString(other.label)) {}
+        : id(other.id), availableAtMin(other.availableAtMin), label(dupCString(other.label)),
+          canBasic(other.canBasic), canDeluxe(other.canDeluxe), canWax(other.canWax) {}
 
     WashBay& operator=(const WashBay& other) {
         if (this != &other) {
@@ -133,11 +140,29 @@ public:
             availableAtMin = other.availableAtMin;
             delete[] label;
             label = dupCString(other.label);
+            canBasic = other.canBasic;
+            canDeluxe = other.canDeluxe;
+            canWax = other.canWax;
         }
         return *this;
     }
 
     ~WashBay() { delete[] label; }
+
+    // capabilities
+    bool supportsBasic() const { return canBasic; }
+    bool supportsDeluxe() const { return canDeluxe; }
+    bool supportsWax() const { return canWax; }
+
+    void upgradeDeluxe() { canDeluxe = true; }
+    void upgradeWax() { canWax = true; }
+
+    bool supportsServiceName(const std::string& n) const {
+        if (n == "Basic" || n == "basic") return canBasic;
+        if (n == "Deluxe" || n == "deluxe") return canDeluxe;
+        if (n == "Wax"    || n == "wax")    return canWax;
+        return false;
+    }
 
     bool isFreeAt(int tMin) const { return tMin >= availableAtMin; }
 
@@ -156,7 +181,9 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const WashBay& wb) {
         os << "WashBay{id=" << wb.id << ", label='" << wb.label
-           << "', availableAt=" << wb.availableAtMin << "min}";
+           << "', availableAt=" << wb.availableAtMin
+           << "min, caps=[Basic" << (wb.canDeluxe ? ",Deluxe" : "")
+           << (wb.canWax ? ",Wax" : "") << "]}";
         return os;
     }
 };
@@ -170,14 +197,19 @@ class CarWash {
     double cash = 0.0;
 
     // program zilnic
-    int openingMin; // ex: 08:00
-    int closingMin; // ex: 12:00
+    int openingMin;
+    int closingMin;
     int currentDay = 1;
 
-    // preturi de aprovizionare (EUR per unitate)
-    double priceWaterPerL = 0.02;    // 2 eurocenti / L
-    double priceShampooPerML = 0.03; // 3 eurocenti / ml
-    double priceWaxPerML = 0.05;     // 5 eurocenti / ml
+    // preturi aprovizionare
+    double priceWaterPerL = 0.02;
+    double priceShampooPerML = 0.03;
+    double priceWaxPerML = 0.05;
+
+    // preturi upgrade
+    double costPerMinutePerBay = 0.50; // EUR/min/bay
+    double costUpgradeDeluxe = 200.0;  // EUR/bay
+    double costUpgradeWax = 150.0;     // EUR/bay
 
     int findServiceIndex(const std::string& n) const {
         for (std::size_t i = 0; i < services.size(); ++i) {
@@ -204,7 +236,7 @@ public:
     void addService(const ServicePackage& sp) { services.push_back(sp); }
     void addBay(const WashBay& wb) { bays.push_back(wb); }
 
-    // ---------- Booking ----------
+    // ---------- Booking (respecta capabilitatile per-bay) ----------
     int book(const std::string& serviceName, int cars) {
         int idx = findServiceIndex(serviceName);
         if (idx < 0) throw std::runtime_error("service not found");
@@ -223,8 +255,17 @@ public:
 
         int scheduled = 0;
         for (int i = 0; i < feasible; ++i) {
+            // alege cea mai rapida bay care suporta serviciul
             auto it = std::min_element(bays.begin(), bays.end(),
-                [](const WashBay& a, const WashBay& b){ return a.getAvailableAt() < b.getAvailableAt(); });
+                [&](const WashBay& a, const WashBay& b){
+                    int A = a.supportsServiceName(serviceName) ? a.getAvailableAt() : INT_MAX/2;
+                    int B = b.supportsServiceName(serviceName) ? b.getAvailableAt() : INT_MAX/2;
+                    return A < B;
+                });
+
+            if (it == bays.end() || !it->supportsServiceName(serviceName))
+                break; // niciun bay nu suporta acest serviciu
+
             int startMin = it->getAvailableAt();
             int finish = it->schedule(sp, startMin);
             if (finish <= closingMin) {
@@ -248,7 +289,6 @@ public:
     double quotePurchaseCost(int wLiters, int sMl, int xMl) const {
         return wLiters * priceWaterPerL + sMl * priceShampooPerML + xMl * priceWaxPerML;
     }
-
     bool buyInventory(int wLiters, int sMl, int xMl) {
         if (wLiters < 0 || sMl < 0 || xMl < 0) return false;
         double cost = quotePurchaseCost(wLiters, sMl, xMl);
@@ -256,6 +296,36 @@ public:
         cash -= cost;
         inventory.restock(wLiters, sMl, xMl);
         return true;
+    }
+
+    // ---------- Upgrade ore ----------
+    bool upgradeHours(int addMinutes) {
+        if (addMinutes <= 0) return false;
+        double cost = addMinutes * costPerMinutePerBay * bays.size();
+        if (cost > cash + 1e-9) return false;
+        cash -= cost;
+        closingMin += addMinutes;
+        return true;
+    }
+
+    // ---------- Upgrade capabilitati per-bay ----------
+    bool upgradeBay(int id, const std::string& type) {
+        WashBay* target = nullptr;
+        for (auto& b : bays) if (b.getId() == id) { target = &b; break; }
+        if (!target) return false;
+
+        if (equalNoCase(type, "Deluxe")) {
+            if (cash + 1e-9 < costUpgradeDeluxe) return false;
+            cash -= costUpgradeDeluxe;
+            target->upgradeDeluxe();
+            return true;
+        } else if (equalNoCase(type, "Wax")) {
+            if (cash + 1e-9 < costUpgradeWax) return false;
+            cash -= costUpgradeWax;
+            target->upgradeWax();
+            return true;
+        }
+        return false;
     }
 
     // ---------- ZIUA ----------
@@ -272,13 +342,24 @@ public:
     int getOpeningMin() const { return openingMin; }
     int getClosingMin() const { return closingMin; }
     int getDay() const { return currentDay; }
+    int numBays() const { return static_cast<int>(bays.size()); }
+
+    // timp ramas pentru un bay (>=0)
+    int remainingForBay(const WashBay& b) const {
+        int rem = closingMin - b.getAvailableAt();
+        return rem > 0 ? rem : 0;
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const CarWash& cw) {
         os << "CarWash '" << cw.name << "' (Day " << cw.currentDay << ")\n  "
            << cw.inventory << "\n  Services:\n";
         for (const auto& s : cw.services) os << "    - " << s << "\n";
-        os << "  Bays:\n";
-        for (const auto& b : cw.bays) os << "    - " << b << "\n";
+        os << "  Bays (" << cw.bays.size() << "):\n";
+        for (const auto& b : cw.bays) {
+            os << "    - " << b << " | remaining=" << cw.remainingForBay(b) << "min\n";
+        }
+        os << "  Hours: open " << cw.openingMin << " -> close " << cw.closingMin
+           << " (mins from day start)\n";
         os << "  Cash: " << std::fixed << std::setprecision(2) << cw.cash << " EUR";
         return os;
     }
@@ -292,23 +373,23 @@ static void printServices(const CarWash& cw) {
 }
 
 static void printBays(const CarWash& cw) {
-    std::cout << "Bays:\n";
+    std::cout << "Bays (" << cw.numBays() << " total):\n";
     for (const auto& b : cw.getBays())
-        std::cout << "  " << b << "\n";
+        std::cout << "  " << b << " | remaining=" << cw.remainingForBay(b) << "min\n";
 }
 
 static void printStatus(const CarWash& cw) {
     std::cout << "=== STATUS (Day " << cw.getDay() << ") ===\n";
     std::cout << "Inventory: " << cw.getInventory() << "\n";
-    printServices(cw);
-    printBays(cw);
     std::cout << "Cash: " << std::fixed << std::setprecision(2) << cw.getCash() << " EUR\n";
+    std::cout << "Hours: open=" << cw.getOpeningMin() << " -> close=" << cw.getClosingMin() << " (mins)\n";
+    std::cout << "Bays: " << cw.numBays() << "\n";
+    printBays(cw);
 }
 
 // ------------------------------------ main ------------------------------------
 int main() {
     try {
-        // 1) Setup initial
         const int OPEN = 8 * 60;   // 08:00
         const int CLOSE = 12 * 60; // 12:00
 
@@ -323,23 +404,19 @@ int main() {
         cw.addService(deluxe);
         cw.addService(wax);
 
+        // La start toate bay-urile pot doar Basic
         WashBay b1(1, OPEN, "Front Left");
         WashBay b2(2, OPEN + 10, "Front Right");
-        WashBay b3 = b1;                               // copy ctor
-        b3 = WashBay(3, OPEN + 5, "Rear Center");      // operator=
-
-        cw.addBay(b1);
-        cw.addBay(b2);
-        cw.addBay(b3);
+        WashBay b3 = b1;                                // copy ctor
+        b3 = WashBay(3, OPEN + 5, "Rear Center");       // operator=
+        cw.addBay(b1); cw.addBay(b2); cw.addBay(b3);
 
         std::cout << "=== INITIAL STATE ===\n" << cw << "\n\n";
         cw.applyGlobalPriceFactor(1.10);
         std::cout << "--- After 10% weekend price increase ---\n";
         for (const auto& s : cw.getServices()) std::cout << s << "\n";
-        std::cout << "\n";
+        std::cout << "\nType `help` for commands.\n";
 
-        // 2) Interfata text
-        std::cout << "Type `help` for commands.\n";
         std::string line;
         while (true) {
             std::cout << "> ";
@@ -359,14 +436,17 @@ int main() {
             if (cmd == "help") {
                 std::cout <<
                     "Commands:\n"
-                    "  help                 -> this help\n"
-                    "  status               -> show inventory, services, bays, cash, day\n"
-                    "  services             -> list services\n"
-                    "  bays                 -> list bay status\n"
-                    "  book <Service> <k>   -> schedule k cars (Service: Basic/Deluxe/Wax)\n"
-                    "  shop                 -> buy water/shampoo/wax with cash\n"
-                    "  endday               -> finish the current day; next day starts (bays reset)\n"
-                    "  endrun               -> quit program and show final state\n";
+                    "  help\n"
+                    "  status\n"
+                    "  services\n"
+                    "  bays\n"
+                    "  bayscount\n"
+                    "  book <Service> <k>\n"
+                    "  shop\n"
+                    "  upgradehours <minutes>\n"
+                    "  upgradebay <id> <Deluxe|Wax>\n"
+                    "  endday\n"
+                    "  endrun\n";
             }
             else if (cmd == "status") {
                 printStatus(cw);
@@ -377,6 +457,9 @@ int main() {
             else if (cmd == "bays") {
                 printBays(cw);
             }
+            else if (cmd == "bayscount") {
+                std::cout << "Total bays: " << cw.numBays() << "\n";
+            }
             else if (cmd == "book") {
                 std::string service; int k;
                 if (!(iss >> service >> k)) {
@@ -385,7 +468,11 @@ int main() {
                 }
                 try {
                     int booked = cw.book(service, k);
-                    std::cout << "Booked " << booked << " cars for " << service << ".\n";
+                    if (booked == 0)
+                        std::cout << "No suitable bay supports " << service
+                                  << " or not enough time/resources.\n";
+                    else
+                        std::cout << "Booked " << booked << " cars for " << service << ".\n";
                 } catch (const std::exception& e) {
                     std::cout << "Error: " << e.what() << "\n";
                 }
@@ -403,13 +490,11 @@ int main() {
                 std::cout << "How many ml of wax? ";
                 if (!std::getline(std::cin, tmp)) break; x = std::max(0, std::stoi(tmp));
 
-                double cost = w*0.02 + s*0.03 + x*0.05; // aceleasi preturi ca in CarWash::quotePurchaseCost
+                // afis cost estimat (aceleasi preturi ca in CarWash)
+                double cost = w*0.02 + s*0.03 + x*0.05;
                 std::cout << "Cost: " << std::fixed << std::setprecision(2) << cost << " EUR. Confirm (y/n)? ";
                 if (!std::getline(std::cin, tmp)) break;
                 if (!tmp.empty() && (tmp[0]=='y' || tmp[0]=='Y')) {
-                    // folosim metoda CarWash (care scade cash si mareste stocul)
-                    // pentru a respecta incapsularea
-                    // (quote + buy pentru validari)
                     if (cw.buyInventory(w, s, x)) {
                         std::cout << "Purchased. New inventory: " << cw.getInventory()
                                   << " | Cash: " << std::fixed << std::setprecision(2)
@@ -421,9 +506,34 @@ int main() {
                     std::cout << "Cancelled.\n";
                 }
             }
+            else if (cmd == "upgradehours") {
+                int minutes = 0;
+                if (!(iss >> minutes) || minutes <= 0) {
+                    std::cout << "Usage: upgradehours <positive_minutes>\n";
+                    continue;
+                }
+                // costul e calculat in metoda (0.50 EUR/min/bay)
+                if (cw.upgradeHours(minutes)) {
+                    std::cout << "Closing time extended by " << minutes << " minutes.\n";
+                } else {
+                    std::cout << "Not enough cash for hours upgrade.\n";
+                }
+            }
+            else if (cmd == "upgradebay") {
+                int id; std::string type;
+                if (!(iss >> id >> type)) {
+                    std::cout << "Usage: upgradebay <id> <Deluxe|Wax>\n";
+                    continue;
+                }
+                if (cw.upgradeBay(id, type)) {
+                    std::cout << "Bay " << id << " upgraded with " << type << ".\n";
+                } else {
+                    std::cout << "Upgrade failed (check id/type/cash).\n";
+                }
+            }
             else if (cmd == "endday") {
                 cw.endDay();
-                std::cout << "New day started. Day = " << cw.getDay() << ". Bays reset to opening time.\n";
+                std::cout << "New day started. Bays reset to opening time. Day = " << cw.getDay() << ".\n";
             }
             else if (cmd == "endrun") {
                 break;
@@ -433,13 +543,8 @@ int main() {
             }
         }
 
-        // 3) Final
         std::cout << "\n=== FINAL STATE ===\n";
-        std::cout << "Inventory: " << cw.getInventory() << "\n";
-        std::cout << "Bays:\n";
-        for (const auto& b : cw.getBays()) std::cout << "  " << b << "\n";
-        std::cout << "Total Cash: " << std::fixed << std::setprecision(2) << cw.getCash() << " EUR\n";
-
+        std::cout << cw << "\n";
         return 0;
     }
     catch (const std::exception& ex) {
@@ -447,4 +552,3 @@ int main() {
         return 1;
     }
 }
-
