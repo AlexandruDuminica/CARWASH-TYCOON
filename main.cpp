@@ -1,22 +1,23 @@
-// Car Wash Tycoon – Tema POO cu interfata text + SHOP
-// ----------------------------------------------------------
-// Comenzi disponibile (tasteaza `help` in program):
+// Car Wash Tycoon – Tema POO cu interfata text + SHOP + zile multiple
+// -------------------------------------------------------------------
+// Comenzi (tasteaza `help` in program):
 //   help                 -> lista comenzilor
-//   status               -> afiseaza imaginea de ansamblu (inventar, servicii, boxe, cash)
+//   status               -> inventar, servicii, boxe, cash, ziua curenta
 //   services             -> lista serviciilor si preturile curente
 //   bays                 -> statusul boxelor (cand se elibereaza)
-//   book <Serviciu> <k>  -> programeaza k masini la serviciul dat (Basic/Deluxe/Wax)
-//   shop                 -> cumpara apa / sampon / ceara din cash
-//   end                  -> incheie ziua si afiseaza starea finala
+//   book <Serviciu> <k>  -> programeaza k masini (Basic/Deluxe/Wax)
+//   shop                 -> cumpara apa/sampon/ceara din cash
+//   endday               -> termina ziua curenta si treci la urmatoarea (progres pe zile)
+//   endrun               -> inchide programul (afiseaza starea finala)
 //
-// Respecta cerintele:
+// Cerinte POO bifate ca in versiunile anterioare:
 // - 4 clase prin compunere: ServicePackage, Inventory, WashBay, CarWash
 // - Constructori cu parametri pentru fiecare
-// - Pentru WashBay: constructor de copiere, operator=, destructor (rule of three)
-// - operator<< pentru TOATE clasele (std::ostream) folosind compunere
-// - Functii const si private, plus functii publice non-triviale (planificare,
-//   consum resurse, simulare, profit, raport, cumparare inventar)
-// - Scenariu in main: meniu text in care creezi booking-uri, faci cumparaturi etc.
+// - Pentru WashBay: constructor de copiere, operator=, destructor (Rule of Three)
+// - operator<< pentru TOATE clasele
+// - Functii const, metode private, functii publice non-triviale (booking, consum stoc,
+//   shop, raport, avansare zi)
+// - Scenariu in main: meniu text interactiv
 
 #include <iostream>
 #include <string>
@@ -122,6 +123,7 @@ public:
     WashBay(int id_, int startMin, const std::string& lab)
         : id(id_), availableAtMin(startMin), label(dupCString(lab)) {}
 
+    // Rule of Three
     WashBay(const WashBay& other)
         : id(other.id), availableAtMin(other.availableAtMin), label(dupCString(other.label)) {}
 
@@ -146,6 +148,8 @@ public:
         return finish;
     }
 
+    void resetTo(int openingMin) { availableAtMin = openingMin; }
+
     int getAvailableAt() const { return availableAtMin; }
     int getId() const { return id; }
     std::string getLabel() const { return std::string(label); }
@@ -164,10 +168,14 @@ class CarWash {
     std::vector<ServicePackage> services;
     std::vector<WashBay> bays;
     double cash = 0.0;
-    int closingMin; // program zilnic
+
+    // program zilnic
+    int openingMin; // ex: 08:00
+    int closingMin; // ex: 12:00
+    int currentDay = 1;
 
     // preturi de aprovizionare (EUR per unitate)
-    double priceWaterPerL = 0.02;   // 2 eurocenti / L
+    double priceWaterPerL = 0.02;    // 2 eurocenti / L
     double priceShampooPerML = 0.03; // 3 eurocenti / ml
     double priceWaxPerML = 0.05;     // 5 eurocenti / ml
 
@@ -189,8 +197,9 @@ class CarWash {
     }
 
 public:
-    CarWash(std::string nm, Inventory inv, int closeAtMin)
-        : name(std::move(nm)), inventory(std::move(inv)), closingMin(closeAtMin) {}
+    CarWash(std::string nm, Inventory inv, int openAtMin, int closeAtMin)
+        : name(std::move(nm)), inventory(std::move(inv)),
+          openingMin(openAtMin), closingMin(closeAtMin) {}
 
     void addService(const ServicePackage& sp) { services.push_back(sp); }
     void addBay(const WashBay& wb) { bays.push_back(wb); }
@@ -249,15 +258,24 @@ public:
         return true;
     }
 
+    // ---------- ZIUA ----------
+    void endDay() {
+        for (auto& b : bays) b.resetTo(openingMin);
+        currentDay++;
+    }
+
     // ---------- Getters / afisare ----------
     double getCash() const { return cash; }
     const Inventory& getInventory() const { return inventory; }
     const std::vector<ServicePackage>& getServices() const { return services; }
     const std::vector<WashBay>& getBays() const { return bays; }
+    int getOpeningMin() const { return openingMin; }
     int getClosingMin() const { return closingMin; }
+    int getDay() const { return currentDay; }
 
     friend std::ostream& operator<<(std::ostream& os, const CarWash& cw) {
-        os << "CarWash '" << cw.name << "'\n  " << cw.inventory << "\n  Services:\n";
+        os << "CarWash '" << cw.name << "' (Day " << cw.currentDay << ")\n  "
+           << cw.inventory << "\n  Services:\n";
         for (const auto& s : cw.services) os << "    - " << s << "\n";
         os << "  Bays:\n";
         for (const auto& b : cw.bays) os << "    - " << b << "\n";
@@ -280,7 +298,7 @@ static void printBays(const CarWash& cw) {
 }
 
 static void printStatus(const CarWash& cw) {
-    std::cout << "=== STATUS ===\n";
+    std::cout << "=== STATUS (Day " << cw.getDay() << ") ===\n";
     std::cout << "Inventory: " << cw.getInventory() << "\n";
     printServices(cw);
     printBays(cw);
@@ -291,8 +309,11 @@ static void printStatus(const CarWash& cw) {
 int main() {
     try {
         // 1) Setup initial
+        const int OPEN = 8 * 60;   // 08:00
+        const int CLOSE = 12 * 60; // 12:00
+
         Inventory inv(/*water*/ 3000, /*shampoo*/ 2000, /*wax*/ 1500);
-        CarWash cw("ShinyHands", inv, /*closing at*/ 12 * 60 + 0); // inchidere 12:00
+        CarWash cw("ShinyHands", inv, OPEN, CLOSE);
 
         ServicePackage basic("Basic", 20, 8.0, 80, 40, 0);
         ServicePackage deluxe("Deluxe", 35, 14.5, 120, 60, 0);
@@ -302,10 +323,10 @@ int main() {
         cw.addService(deluxe);
         cw.addService(wax);
 
-        WashBay b1(1, 8 * 60, "Front Left");
-        WashBay b2(2, 8 * 60 + 10, "Front Right");
-        WashBay b3 = b1;                 // copy ctor
-        b3 = WashBay(3, 8 * 60 + 5, "Rear Center"); // operator=
+        WashBay b1(1, OPEN, "Front Left");
+        WashBay b2(2, OPEN + 10, "Front Right");
+        WashBay b3 = b1;                               // copy ctor
+        b3 = WashBay(3, OPEN + 5, "Rear Center");      // operator=
 
         cw.addBay(b1);
         cw.addBay(b2);
@@ -323,7 +344,7 @@ int main() {
         while (true) {
             std::cout << "> ";
             if (!std::getline(std::cin, line)) break;
-            // ignora linii goale
+
             auto trim = [](std::string& x){
                 while (!x.empty() && std::isspace(static_cast<unsigned char>(x.back()))) x.pop_back();
                 std::size_t i=0; while (i<x.size() && std::isspace(static_cast<unsigned char>(x[i]))) ++i;
@@ -339,12 +360,13 @@ int main() {
                 std::cout <<
                     "Commands:\n"
                     "  help                 -> this help\n"
-                    "  status               -> show inventory, services, bays, cash\n"
+                    "  status               -> show inventory, services, bays, cash, day\n"
                     "  services             -> list services\n"
                     "  bays                 -> list bay status\n"
                     "  book <Service> <k>   -> schedule k cars (Service: Basic/Deluxe/Wax)\n"
                     "  shop                 -> buy water/shampoo/wax with cash\n"
-                    "  end                  -> end day and show final state\n";
+                    "  endday               -> finish the current day; next day starts (bays reset)\n"
+                    "  endrun               -> quit program and show final state\n";
             }
             else if (cmd == "status") {
                 printStatus(cw);
@@ -369,7 +391,6 @@ int main() {
                 }
             }
             else if (cmd == "shop") {
-                // cerem cantitatile
                 int w = 0, s = 0, x = 0;
                 std::string tmp;
 
@@ -382,10 +403,13 @@ int main() {
                 std::cout << "How many ml of wax? ";
                 if (!std::getline(std::cin, tmp)) break; x = std::max(0, std::stoi(tmp));
 
-                double cost = cw.quotePurchaseCost(w, s, x);
+                double cost = w*0.02 + s*0.03 + x*0.05; // aceleasi preturi ca in CarWash::quotePurchaseCost
                 std::cout << "Cost: " << std::fixed << std::setprecision(2) << cost << " EUR. Confirm (y/n)? ";
                 if (!std::getline(std::cin, tmp)) break;
                 if (!tmp.empty() && (tmp[0]=='y' || tmp[0]=='Y')) {
+                    // folosim metoda CarWash (care scade cash si mareste stocul)
+                    // pentru a respecta incapsularea
+                    // (quote + buy pentru validari)
                     if (cw.buyInventory(w, s, x)) {
                         std::cout << "Purchased. New inventory: " << cw.getInventory()
                                   << " | Cash: " << std::fixed << std::setprecision(2)
@@ -397,7 +421,11 @@ int main() {
                     std::cout << "Cancelled.\n";
                 }
             }
-            else if (cmd == "end") {
+            else if (cmd == "endday") {
+                cw.endDay();
+                std::cout << "New day started. Day = " << cw.getDay() << ". Bays reset to opening time.\n";
+            }
+            else if (cmd == "endrun") {
                 break;
             }
             else {
