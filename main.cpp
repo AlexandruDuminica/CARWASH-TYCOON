@@ -1,11 +1,14 @@
-// Car Wash Tycoon
+// Car Wash Tycoon – Clang-Tidy friendly (nodiscard, ranges::min_element, constexpr)
+// Comenzi: help, status, services, bays, bayscount, book <Service> <k>, shop,
+//          upgradehours <minutes>, upgradebay <id> <Deluxe|Wax>, endday, endrun
+
 #include <algorithm>
 #include <cctype>
-#include <climits>
 #include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <limits>
+#include <ranges>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -29,12 +32,12 @@ public:
           shampooML_(shampooML),
           waxML_(waxML) {}
 
-    const std::string& name() const noexcept { return name_; }
-    int duration() const noexcept { return durationMin_; }
-    double price() const noexcept { return price_; }
-    int needWater() const noexcept { return waterL_; }
-    int needShampoo() const noexcept { return shampooML_; }
-    int needWax() const noexcept { return waxML_; }
+    [[nodiscard]] const std::string& name() const noexcept { return name_; }
+    [[nodiscard]] int duration() const noexcept { return durationMin_; }
+    [[nodiscard]] double price() const noexcept { return price_; }
+    [[nodiscard]] int needWater() const noexcept { return waterL_; }
+    [[nodiscard]] int needShampoo() const noexcept { return shampooML_; }
+    [[nodiscard]] int needWax() const noexcept { return waxML_; }
 
     void applyPriceFactor(double factor) {
         if (factor < 0.1 || factor > 10.0) {
@@ -81,13 +84,15 @@ public:
         return false;
     }
 
-    int water() const noexcept { return waterL_; }
-    int shampoo() const noexcept { return shampooML_; }
-    int wax() const noexcept { return waxML_; }
+    [[nodiscard]] int water() const noexcept { return waterL_; }
+    [[nodiscard]] int shampoo() const noexcept { return shampooML_; }
+    [[nodiscard]] int wax() const noexcept { return waxML_; }
 
-    double fullness() const {
-        const double maxW = 5000.0, maxS = 5000.0, maxX = 5000.0;
-        return (waterL_ / maxW + shampooML_ / maxS + waxML_ / maxX) / 3.0 * 100.0;
+    [[nodiscard]] double fullness() const {
+        static constexpr double kMaxW = 5000.0;
+        static constexpr double kMaxS = 5000.0;
+        static constexpr double kMaxX = 5000.0;
+        return (waterL_ / kMaxW + shampooML_ / kMaxS + waxML_ / kMaxX) / 3.0 * 100.0;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Inventory& inv) {
@@ -101,7 +106,7 @@ public:
 class WashBay {
     int id_;
     int availableAtMin_;
-    char* label_;  // demonstrăm Rule of Three
+    char* label_;  // Rule of Three demo
     bool canBasic_{true};
     bool canDeluxe_{false};
     bool canWax_{false};
@@ -136,14 +141,14 @@ public:
 
     ~WashBay() { delete[] label_; }
 
-    bool supportsBasic()  const noexcept { return canBasic_; }
-    bool supportsDeluxe() const noexcept { return canDeluxe_; }
-    bool supportsWax()    const noexcept { return canWax_;   }
+    [[nodiscard]] bool supportsBasic()  const noexcept { return canBasic_; }
+    [[nodiscard]] bool supportsDeluxe() const noexcept { return canDeluxe_; }
+    [[nodiscard]] bool supportsWax()    const noexcept { return canWax_;   }
 
     void upgradeDeluxe() noexcept { canDeluxe_ = true; }
     void upgradeWax()    noexcept { canWax_    = true; }
 
-    bool supportsServiceName(const std::string& n) const {
+    [[nodiscard]] bool supportsServiceName(const std::string& n) const {
         if (n == "Basic" || n == "basic") return canBasic_;
         if (n == "Deluxe" || n == "deluxe") return canDeluxe_;
         if (n == "Wax" || n == "wax") return canWax_;
@@ -151,16 +156,16 @@ public:
     }
 
     int schedule(const ServicePackage& sp, int startMin) {
-        const int begin = (startMin > availableAtMin_) ? startMin : availableAtMin_;
+        const int begin  = (startMin > availableAtMin_) ? startMin : availableAtMin_;
         const int finish = begin + sp.duration();
-        availableAtMin_ = finish;
+        availableAtMin_  = finish;
         return finish;
     }
 
     void resetTo(int openingMin) noexcept { availableAtMin_ = openingMin; }
 
-    int availableAt() const noexcept { return availableAtMin_; }
-    int id() const noexcept { return id_; }
+    [[nodiscard]] int availableAt() const noexcept { return availableAtMin_; }
+    [[nodiscard]] int id() const noexcept { return id_; }
 
     friend std::ostream& operator<<(std::ostream& os, const WashBay& wb) {
         os << "Bay #" << wb.id()
@@ -182,12 +187,12 @@ class CarWash {
     int closingMin_;
     int currentDay_{1};
 
-    // prețuri aprovizionare
+    // supply prices
     double priceWaterPerL_{0.02};
     double priceShampooPerML_{0.03};
     double priceWaxPerML_{0.05};
 
-    // prețuri upgrade
+    // upgrade prices
     double costPerMinutePerBay_{0.50}; // EUR/min/bay
     double costUpgradeDeluxe_{200.0};  // EUR/bay
     double costUpgradeWax_{150.0};     // EUR/bay
@@ -196,12 +201,14 @@ class CarWash {
         if (a.size() != b.size()) return false;
         for (std::size_t i = 0; i < a.size(); ++i) {
             if (std::tolower(static_cast<unsigned char>(a[i])) !=
-                std::tolower(static_cast<unsigned char>(b[i]))) return false;
+                std::tolower(static_cast<unsigned char>(b[i]))) {
+                return false;
+            }
         }
         return true;
     }
 
-    int findServiceIndex(const std::string& n) const {
+    [[nodiscard]] int findServiceIndex(const std::string& n) const {
         for (std::size_t i = 0; i < services_.size(); ++i) {
             if (equalNoCase(services_[i].name(), n)) return static_cast<int>(i);
         }
@@ -210,7 +217,7 @@ class CarWash {
 
 public:
     CarWash(std::string name, Inventory inv, int openAtMin, int closeAtMin)
-        : name_(std::move(name)), inventory_(std::move(inv)),
+        : name_(std::move(name)), inventory_(inv), // nu mai folosim std::move(inv)
           openingMin_(openAtMin), closingMin_(closeAtMin) {}
 
     void addService(const ServicePackage& sp) { services_.push_back(sp); }
@@ -233,16 +240,16 @@ public:
 
         int scheduled = 0;
         for (int i = 0; i < feasible; ++i) {
-            auto it = std::min_element(bays_.begin(), bays_.end(),
-                [&](const WashBay& a, const WashBay& b){
-                    const int A = a.supportsServiceName(serviceName) ? a.availableAt() : std::numeric_limits<int>::max()/2;
-                    const int B = b.supportsServiceName(serviceName) ? b.availableAt() : std::numeric_limits<int>::max()/2;
+            auto it = std::ranges::min_element(
+                bays_,
+                [&](const WashBay& a, const WashBay& b) {
+                    const int A = a.supportsServiceName(serviceName) ? a.availableAt()
+                                                                     : std::numeric_limits<int>::max() / 2;
+                    const int B = b.supportsServiceName(serviceName) ? b.availableAt()
+                                                                     : std::numeric_limits<int>::max() / 2;
                     return A < B;
                 });
-
-            if (it == bays_.end() || !it->supportsServiceName(serviceName)) {
-                break;
-            }
+            if (it == bays_.end() || !it->supportsServiceName(serviceName)) break;
 
             const int startMin = it->availableAt();
             const int finish   = it->schedule(sp, startMin);
@@ -262,11 +269,11 @@ public:
     }
 
     // SHOP
-    double priceWaterPerL() const noexcept    { return priceWaterPerL_; }
-    double priceShampooPerML() const noexcept { return priceShampooPerML_; }
-    double priceWaxPerML() const noexcept     { return priceWaxPerML_; }
+    [[nodiscard]] double priceWaterPerL() const noexcept    { return priceWaterPerL_; }
+    [[nodiscard]] double priceShampooPerML() const noexcept { return priceShampooPerML_; }
+    [[nodiscard]] double priceWaxPerML() const noexcept     { return priceWaxPerML_; }
 
-    double quotePurchaseCost(int wLiters, int sMl, int xMl) const {
+    [[nodiscard]] double quotePurchaseCost(int wLiters, int sMl, int xMl) const {
         return wLiters * priceWaterPerL_ + sMl * priceShampooPerML_ + xMl * priceWaxPerML_;
     }
     bool buyInventory(int wLiters, int sMl, int xMl) {
@@ -279,10 +286,11 @@ public:
     }
 
     // UPGRADE ore
-    double costPerMinutePerBay() const noexcept { return costPerMinutePerBay_; }
+    [[nodiscard]] double costPerMinutePerBay() const noexcept { return costPerMinutePerBay_; }
     bool upgradeHours(int addMinutes) {
         if (addMinutes <= 0) return false;
-        const double cost = addMinutes * costPerMinutePerBay_ * static_cast<double>(bays_.size());
+        const double unit = costPerMinutePerBay_ * static_cast<double>(bays_.size());
+        const double cost = addMinutes * unit;
         if (cost > cash_ + 1e-9) return false;
         cash_ -= cost;
         closingMin_ += addMinutes;
@@ -290,8 +298,8 @@ public:
     }
 
     // UPGRADE capabilități pe bay
-    double costUpgradeDeluxe() const noexcept { return costUpgradeDeluxe_; }
-    double costUpgradeWax() const noexcept    { return costUpgradeWax_; }
+    [[nodiscard]] double costUpgradeDeluxe() const noexcept { return costUpgradeDeluxe_; }
+    [[nodiscard]] double costUpgradeWax() const noexcept    { return costUpgradeWax_; }
     bool upgradeBay(int id, const std::string& type) {
         WashBay* tgt = nullptr;
         for (auto& b : bays_) if (b.id() == id) { tgt = &b; break; }
@@ -319,44 +327,44 @@ public:
     }
 
     // “max afford”
-    int maxAffordableWaterL() const {
+    [[nodiscard]] int maxAffordableWaterL() const {
         return priceWaterPerL_ > 0.0 ? static_cast<int>(std::floor(cash_ / priceWaterPerL_)) : 0;
     }
-    int maxAffordableShampooML() const {
+    [[nodiscard]] int maxAffordableShampooML() const {
         return priceShampooPerML_ > 0.0 ? static_cast<int>(std::floor(cash_ / priceShampooPerML_)) : 0;
     }
-    int maxAffordableWaxML() const {
+    [[nodiscard]] int maxAffordableWaxML() const {
         return priceWaxPerML_ > 0.0 ? static_cast<int>(std::floor(cash_ / priceWaxPerML_)) : 0;
     }
-    int maxAffordableMinutes() const {
+    [[nodiscard]] int maxAffordableMinutes() const {
         const double unit = costPerMinutePerBay_ * static_cast<double>(std::max<std::size_t>(1, bays_.size()));
         return unit > 0.0 ? static_cast<int>(std::floor(cash_ / unit)) : 0;
     }
-    int baysNeedingDeluxe() const {
+    [[nodiscard]] int baysNeedingDeluxe() const {
         int c = 0; for (const auto& b : bays_) if (!b.supportsDeluxe()) ++c; return c;
     }
-    int baysNeedingWax() const {
+    [[nodiscard]] int baysNeedingWax() const {
         int c = 0; for (const auto& b : bays_) if (!b.supportsWax()) ++c; return c;
     }
-    int maxAffordableDeluxeUpgrades() const {
+    [[nodiscard]] int maxAffordableDeluxeUpgrades() const {
         const int byCash = static_cast<int>(std::floor(cash_ / costUpgradeDeluxe_));
         return std::max(0, std::min(byCash, baysNeedingDeluxe()));
     }
-    int maxAffordableWaxUpgrades() const {
+    [[nodiscard]] int maxAffordableWaxUpgrades() const {
         const int byCash = static_cast<int>(std::floor(cash_ / costUpgradeWax_));
         return std::max(0, std::min(byCash, baysNeedingWax()));
     }
 
-    // getters pt afișare
-    const Inventory& inventory() const noexcept { return inventory_; }
-    const std::vector<ServicePackage>& services() const noexcept { return services_; }
-    const std::vector<WashBay>& bays() const noexcept { return bays_; }
-    int openingMin() const noexcept { return openingMin_; }
-    int closingMin() const noexcept { return closingMin_; }
-    int day() const noexcept { return currentDay_; }
-    double cash() const noexcept { return cash_; }
-    int numBays() const noexcept { return static_cast<int>(bays_.size()); }
-    int remainingForBay(const WashBay& b) const {
+    // getters pentru afișare
+    [[nodiscard]] const Inventory& inventory() const noexcept { return inventory_; }
+    [[nodiscard]] const std::vector<ServicePackage>& services() const noexcept { return services_; }
+    [[nodiscard]] const std::vector<WashBay>& bays() const noexcept { return bays_; }
+    [[nodiscard]] int openingMin() const noexcept { return openingMin_; }
+    [[nodiscard]] int closingMin() const noexcept { return closingMin_; }
+    [[nodiscard]] int day() const noexcept { return currentDay_; }
+    [[nodiscard]] double cash() const noexcept { return cash_; }
+    [[nodiscard]] int numBays() const noexcept { return static_cast<int>(bays_.size()); }
+    [[nodiscard]] int remainingForBay(const WashBay& b) const {
         const int rem = closingMin_ - b.availableAt();
         return rem > 0 ? rem : 0;
     }
@@ -374,7 +382,7 @@ public:
     }
 };
 
-// ——— Afișări helper ———
+// ——— Helpers (fără IO în clase) ———
 static void printServices(const CarWash& cw) {
     std::cout << "Services:\n";
     for (const auto& s : cw.services()) std::cout << "  - " << s << "\n";
@@ -394,14 +402,14 @@ static void printStatus(const CarWash& cw) {
 
 static void trim(std::string& s) {
     while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
-    std::size_t i = 0; while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) ++i;
+    std::size_t i = 0U; while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) ++i;
     s.erase(0, i);
 }
 
 int main() {
     try {
-        const int OPEN  = 8 * 60;
-        const int CLOSE = 12 * 60;
+        static constexpr int OPEN  = 8 * 60;
+        static constexpr int CLOSE = 12 * 60;
 
         Inventory inv(3000, 2000, 1500);
         CarWash cw("ShinyHands", inv, OPEN, CLOSE);
@@ -456,7 +464,7 @@ int main() {
         std::string line;
         while (true) {
             std::cout << "> ";
-            if (!std::getline(std::cin, line)) { break; }  // braces --> avoid misleading-indentation
+            if (!std::getline(std::cin, line)) { break; }
             trim(line);
             if (line.empty()) continue;
 
