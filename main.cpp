@@ -1,123 +1,110 @@
-#include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
 #include <limits>
-#include <ranges>
 #include <sstream>
 #include <string>
-#include <vector>
+
+#define MAX_SERV 8
+#define MAX_BAYS 8
 
 class ServicePackage {
     std::string name_;
-    int durationMin_;
+    int dur_;
     double price_;
-    int waterL_;
-    int shampooML_;
-    int waxML_;
+    int wL_;
+    int sML_;
+    int xML_;
 public:
-    ServicePackage(std::string name, int durationMin, double price, int waterL, int shampooML, int waxML)
-        : name_(std::move(name)), durationMin_(durationMin), price_(price),
-          waterL_(waterL), shampooML_(shampooML), waxML_(waxML) {}
+    ServicePackage(std::string n, int d, double p, int w, int s, int x)
+        : name_(std::move(n)), dur_(d), price_(p), wL_(w), sML_(s), xML_(x) {}
 
     [[nodiscard]] const std::string& name() const noexcept { return name_; }
-    [[nodiscard]] int duration() const noexcept { return durationMin_; }
-    [[nodiscard]] double price() const noexcept { return price_; }
-    [[nodiscard]] int needWater() const noexcept { return waterL_; }
-    [[nodiscard]] int needShampoo() const noexcept { return shampooML_; }
-    [[nodiscard]] int needWax() const noexcept { return waxML_; }
+    [[nodiscard]] int    duration()  const noexcept { return dur_; }
+    [[nodiscard]] double price()     const noexcept { return price_; }
+    [[nodiscard]] int    needW()     const noexcept { return wL_; }
+    [[nodiscard]] int    needS()     const noexcept { return sML_; }
+    [[nodiscard]] int    needX()     const noexcept { return xML_; }
 
-    bool applyPriceFactor(double f) {
-        if (f <= 0.0) return false;
-        price_ *= f;
-        return true;
-    }
+    bool applyFactor(double f) { if (f <= 0.0) return false; price_ *= f; return true; }
 
     friend std::ostream& operator<<(std::ostream& os, const ServicePackage& sp) {
-        os << "ServicePackage{name='" << sp.name()
-           << "', dur=" << sp.duration() << "min, price="
-           << std::fixed << std::setprecision(2) << sp.price()
-           << " EUR, use=[" << sp.needWater() << "L water, "
-           << sp.needShampoo() << "ml shampoo, " << sp.needWax() << "ml wax]}";
+        os << "Service{name='" << sp.name() << "', t=" << sp.duration()
+           << "min, price=" << std::fixed << std::setprecision(2) << sp.price()
+           << " EUR, use=[" << sp.needW() << "L, " << sp.needS()
+           << "ml, " << sp.needX() << "ml]}";
         return os;
     }
 };
 
 class Inventory {
-    int waterL_;
-    int shampooML_;
-    int waxML_;
+    int wL_;
+    int sML_;
+    int xML_;
 public:
-    Inventory(int waterL, int shampooML, int waxML)
-        : waterL_(waterL), shampooML_(shampooML), waxML_(waxML) {}
+    Inventory(int w, int s, int x) : wL_(w), sML_(s), xML_(x) {}
 
-    void restock(int w, int s, int x) {
-        if (w > 0) waterL_ += w;
-        if (s > 0) shampooML_ += s;
-        if (x > 0) waxML_ += x;
+    void add(int w, int s, int x) {
+        if (w > 0) wL_ += w;
+        if (s > 0) sML_ += s;
+        if (x > 0) xML_ += x;
     }
 
-    bool consumeIfAvailable(const ServicePackage& sp, int cars) {
-        long needW = 1L * sp.needWater()   * cars;
-        long needS = 1L * sp.needShampoo() * cars;
-        long needX = 1L * sp.needWax()     * cars;
-        if (needW <= waterL_ && needS <= shampooML_ && needX <= waxML_) {
-            waterL_    -= int(needW);
-            shampooML_ -= int(needS);
-            waxML_     -= int(needX);
+    bool takeIfCan(const ServicePackage& sp, int cars) {
+        long W = 1L * sp.needW() * cars;
+        long S = 1L * sp.needS() * cars;
+        long X = 1L * sp.needX() * cars;
+        if (W <= wL_ && S <= sML_ && X <= xML_) {
+            wL_ -= int(W); sML_ -= int(S); xML_ -= int(X);
             return true;
         }
         return false;
     }
 
-    [[nodiscard]] int water() const noexcept { return waterL_; }
-    [[nodiscard]] int shampoo() const noexcept { return shampooML_; }
-    [[nodiscard]] int wax() const noexcept { return waxML_; }
+    [[nodiscard]] int w() const noexcept { return wL_; }
+    [[nodiscard]] int s() const noexcept { return sML_; }
+    [[nodiscard]] int x() const noexcept { return xML_; }
 
     [[nodiscard]] double fullness() const {
-        constexpr double kW = 5000.0;
-        constexpr double kS = 5000.0;
-        constexpr double kX = 5000.0;
-        return (waterL_ / kW + shampooML_ / kS + waxML_ / kX) / 3.0 * 100.0;
+        const double kW = 5000.0, kS = 5000.0, kX = 5000.0;
+        return (wL_/kW + sML_/kS + xML_/kX) / 3.0 * 100.0;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Inventory& inv) {
-        os << "Inventory{water=" << inv.water() << "L, shampoo=" << inv.shampoo()
-           << "ml, wax=" << inv.wax() << "ml, fullness=" << std::fixed
+        os << "Inventory{water=" << inv.w() << "L, shampoo=" << inv.s()
+           << "ml, wax=" << inv.x() << "ml, full=" << std::fixed
            << std::setprecision(1) << inv.fullness() << "%}";
         return os;
     }
 };
 
 class WashBay {
-    int id_;
-    int availableAtMin_;
+    int   id_;
+    int   availMin_;
     char* label_;
-    bool canBasic_{true};
-    bool canDeluxe_{false};
-    bool canWax_{false};
+    bool  canBasic_{true};
+    bool  canDeluxe_{false};
+    bool  canWax_{false};
 
-    char* dupCString(const std::string& s) {
+    char* dup(const std::string& s) {
         char* p = new char[s.size() + 1];
         std::copy(s.c_str(), s.c_str() + s.size() + 1, p);
         return p;
     }
 public:
-    WashBay(int id, int startMin, const std::string& label)
-        : id_(id), availableAtMin_(startMin), label_(dupCString(label)) {}
+    WashBay(int id, int startMin, const std::string& text)
+        : id_(id), availMin_(startMin), label_(dup(text)) {}
 
     WashBay(const WashBay& o)
-        : id_(o.id_), availableAtMin_(o.availableAtMin_), label_(dupCString(o.label_)),
+        : id_(o.id_), availMin_(o.availMin_), label_(dup(o.label_)),
           canBasic_(o.canBasic_), canDeluxe_(o.canDeluxe_), canWax_(o.canWax_) {}
 
     WashBay& operator=(const WashBay& o) {
         if (this != &o) {
-            id_ = o.id_;
-            availableAtMin_ = o.availableAtMin_;
-            delete[] label_;
-            label_ = dupCString(o.label_);
+            id_ = o.id_; availMin_ = o.availMin_;
+            delete[] label_; label_ = dup(o.label_);
             canBasic_  = o.canBasic_;
             canDeluxe_ = o.canDeluxe_;
             canWax_    = o.canWax_;
@@ -127,39 +114,37 @@ public:
 
     ~WashBay() { delete[] label_; }
 
-    [[nodiscard]] bool supportsBasic()  const noexcept { return canBasic_; }
-    [[nodiscard]] bool supportsDeluxe() const noexcept { return canDeluxe_; }
-    [[nodiscard]] bool supportsWax()    const noexcept { return canWax_;   }
+    [[nodiscard]] int  id()      const noexcept { return id_; }
+    [[nodiscard]] int  availAt() const noexcept { return availMin_; }
+    [[nodiscard]] bool hasBasic()  const noexcept { return canBasic_; }
+    [[nodiscard]] bool hasDeluxe() const noexcept { return canDeluxe_; }
+    [[nodiscard]] bool hasWax()    const noexcept { return canWax_; }
 
-    void upgradeDeluxe() noexcept { canDeluxe_ = true; }
-    void upgradeWax()    noexcept { canWax_    = true; }
+    void addDeluxe() noexcept { canDeluxe_ = true; }
+    void addWax()    noexcept { canWax_    = true; }
 
-    [[nodiscard]] bool supportsServiceName(const std::string& n) const {
-        if (n == "Basic"  || n == "basic")  return canBasic_;
-        if (n == "Deluxe" || n == "deluxe") return canDeluxe_;
-        if (n == "Wax"    || n == "wax")    return canWax_;
+    bool canDo(const std::string& n) const {
+        if (n=="Basic"  || n=="basic")  return canBasic_;
+        if (n=="Deluxe" || n=="deluxe") return canDeluxe_;
+        if (n=="Wax"    || n=="wax")    return canWax_;
         return false;
     }
 
-    int schedule(const ServicePackage& sp, int startMin) {
-        int begin  = (startMin > availableAtMin_) ? startMin : availableAtMin_;
-        int finish = begin + sp.duration();
-        availableAtMin_  = finish;
+    int bookOne(const ServicePackage& sp, int earliest) {
+        int start  = (earliest > availMin_) ? earliest : availMin_;
+        int finish = start + sp.duration();
+        availMin_  = finish;
         return finish;
     }
 
-    void resetTo(int openingMin) noexcept { availableAtMin_ = openingMin; }
+    void reset(int openMin) { availMin_ = openMin; }
 
-    [[nodiscard]] int availableAt() const noexcept { return availableAtMin_; }
-    [[nodiscard]] int id() const noexcept { return id_; }
-
-    friend std::ostream& operator<<(std::ostream& os, const WashBay& wb) {
-        os << "Bay #" << wb.id()
-           << " (availAt=" << wb.availableAt() << "min, caps=[";
+    friend std::ostream& operator<<(std::ostream& os, const WashBay& b) {
+        os << "Bay #" << b.id() << " (at=" << b.availAt() << "m, [";
         bool first = true;
-        if (wb.supportsBasic())  { os << "Basic";  first = false; }
-        if (wb.supportsDeluxe()) { os << (first ? "" : ",") << "Deluxe"; first = false; }
-        if (wb.supportsWax())    { os << (first ? "" : ",") << "Wax"; }
+        if (b.hasBasic())  { os << "Basic";  first = false; }
+        if (b.hasDeluxe()) { os << (first ? "" : ",") << "Deluxe"; first = false; }
+        if (b.hasWax())    { os << (first ? "" : ",") << "Wax"; }
         os << "])";
         return os;
     }
@@ -167,302 +152,213 @@ public:
 
 class CarWash {
     std::string name_;
-    Inventory inventory_;
-    std::vector<ServicePackage> services_;
-    std::vector<WashBay> bays_;
+    Inventory   inv_;
+
+    ServicePackage* serv_[MAX_SERV];
+    int nServ_{0};
+
+    WashBay* bays_[MAX_BAYS];
+    int nBays_{0};
+
     double cash_{0.0};
-    int openingMin_;
-    int closingMin_;
-    int currentDay_{1};
+    int openMin_;
+    int closeMin_;
+    int day_{1};
 
-    double priceWaterPerL_{0.02};
-    double priceShampooPerML_{0.03};
-    double priceWaxPerML_{0.05};
-    double costPerMinutePerBay_{0.50};
-    double costUpgradeDeluxe_{200.0};
-    double costUpgradeWax_{150.0};
+    double priceW_{0.02};
+    double priceS_{0.03};
+    double priceX_{0.05};
+    double costPerMinPerBay_{0.50};
+    double costDeluxe_{200.0};
+    double costWax_{150.0};
 
-    bool eqNoCaseCh(char a, char b) const {
-        return std::tolower((unsigned char)a) == std::tolower((unsigned char)b);
-    }
+    double r2(double v) const { return std::round(v * 100.0) / 100.0; }
+    bool geMoney(double a, double b) const { return r2(a) >= r2(b); }
+    bool gtMoney(double a, double b) const { return r2(a) >  r2(b); }
 
-    bool equalNoCase(const std::string& a, const std::string& b) const {
-        if (a.size() != b.size()) {
-            return false;
-        }
+    bool sameCaseInsensitive(const std::string& a, const std::string& b) const {
+        if (a.size() != b.size()) return false;
         for (size_t i = 0; i < a.size(); ++i) {
-            if (!eqNoCaseCh(a[i], b[i])) {
-                return false;
-            }
+            char ca = std::tolower((unsigned char)a[i]);
+            char cb = std::tolower((unsigned char)b[i]);
+            if (ca != cb) return false;
         }
         return true;
     }
 
-    int findServiceIndex(const std::string& n) const {
-        for (size_t i = 0; i < services_.size(); ++i) {
-            if (equalNoCase(services_[i].name(), n)) {
-                return int(i);
-            }
+    int findService(const std::string& name) const {
+        for (int i = 0; i < nServ_; ++i) {
+            if (serv_[i] && sameCaseInsensitive(serv_[i]->name(), name)) return i;
         }
         return -1;
     }
 
+    void trim(std::string& s) {
+        while (!s.empty() && std::isspace((unsigned char)s.back())) { s.pop_back(); }
+        size_t i = 0;
+        while (i < s.size() && std::isspace((unsigned char)s[i])) { ++i; }
+        s.erase(0, i);
+    }
+
+    int toIntOrZero(const std::string& t) {
+        if (t.empty()) return 0;
+        char* e = nullptr; long v = std::strtol(t.c_str(), &e, 10);
+        if (e == t.c_str() || *e != '\0') return 0;
+        if (v < std::numeric_limits<int>::min() || v > std::numeric_limits<int>::max()) return 0;
+        return int(v);
+    }
+
 public:
-    CarWash(std::string name, Inventory inv, int openAtMin, int closeAtMin)
-        : name_(std::move(name)), inventory_(inv), openingMin_(openAtMin), closingMin_(closeAtMin) {}
+    CarWash(std::string n, Inventory inv, int openM, int closeM)
+        : name_(std::move(n)), inv_(inv), openMin_(openM), closeMin_(closeM) {
+        for (int i = 0; i < MAX_SERV; ++i) serv_[i] = nullptr;
+        for (int i = 0; i < MAX_BAYS; ++i)  bays_[i]  = nullptr;
+    }
 
-    void addService(const ServicePackage& sp) { services_.push_back(sp); }
-    void addBay(const WashBay& wb) { bays_.push_back(wb); }
+    ~CarWash() {
+        for (int i = 0; i < nServ_; ++i) { delete serv_[i]; serv_[i] = nullptr; }
+        for (int i = 0; i < nBays_; ++i)  { delete bays_[i];  bays_[i]  = nullptr; }
+    }
 
-    int book(const std::string& serviceName, int cars) {
-        int idx = findServiceIndex(serviceName);
-        if (idx < 0) return 0;
-        const ServicePackage& sp = services_[size_t(idx)];
+    bool addService(const ServicePackage& s) {
+        if (nServ_ >= MAX_SERV) return false;
+        serv_[nServ_] = new ServicePackage(s);
+        ++nServ_;
+        return true;
+    }
 
-        int low = 0, high = cars, feasible = 0;
+    bool addBay(const WashBay& b) {
+        if (nBays_ >= MAX_BAYS) return false;
+        bays_[nBays_] = new WashBay(b);
+        ++nBays_;
+        return true;
+    }
+
+    int bookCars(const std::string& serviceName, int cars) {
+        int si = findService(serviceName);
+        if (si < 0) return 0;
+        const ServicePackage& sp = *serv_[si];
+
+        int low = 0, high = cars, ok = 0;
         while (low <= high) {
             int mid = (low + high) / 2;
-            Inventory probe = inventory_;
-            if (probe.consumeIfAvailable(sp, mid)) {
-                feasible = mid;
-                low = mid + 1;
-            } else {
-                high = mid - 1;
-            }
+            Inventory probe = inv_;
+            if (probe.takeIfCan(sp, mid)) { ok = mid; low = mid + 1; }
+            else { high = mid - 1; }
         }
-        if (feasible == 0) {
-            return 0;
-        }
-        inventory_.consumeIfAvailable(sp, feasible);
+        if (ok == 0) return 0;
+        inv_.takeIfCan(sp, ok);
 
-        int scheduled = 0;
-        for (int i = 0; i < feasible; ++i) {
-            auto it = std::ranges::min_element(
-                bays_,
-                [&](const WashBay& a, const WashBay& b) {
-                    int A = a.supportsServiceName(serviceName) ? a.availableAt()
-                                                               : std::numeric_limits<int>::max() / 2;
-                    int B = b.supportsServiceName(serviceName) ? b.availableAt()
-                                                               : std::numeric_limits<int>::max() / 2;
-                    return A < B;
-                });
-
-            if (it == bays_.end() || !it->supportsServiceName(serviceName)) {
-                break;
+        int done = 0;
+        for (int c = 0; c < ok; ++c) {
+            int idx = -1; int bestTime = std::numeric_limits<int>::max() / 2;
+            for (int i = 0; i < nBays_; ++i) {
+                if (!bays_[i]) continue;
+                if (!bays_[i]->canDo(serviceName)) continue;
+                int a = bays_[i]->availAt();
+                if (a < bestTime) { bestTime = a; idx = i; }
             }
-
-            int finish = it->schedule(sp, it->availableAt());
-            if (finish <= closingMin_) {
+            if (idx == -1) break;
+            int finish = bays_[idx]->bookOne(sp, bays_[idx]->availAt());
+            if (finish <= closeMin_) {
                 cash_ += sp.price();
-                ++scheduled;
+                ++done;
             } else {
-                inventory_.restock(sp.needWater(), sp.needShampoo(), sp.needWax());
+                inv_.add(sp.needW(), sp.needS(), sp.needX());
                 break;
             }
         }
-        return scheduled;
+        return done;
     }
 
-    void applyGlobalPriceFactor(double f) {
-        for (auto& s : services_) {
-            s.applyPriceFactor(f);
-        }
+    void priceAll(double f) {
+        for (int i = 0; i < nServ_; ++i) if (serv_[i]) serv_[i]->applyFactor(f);
     }
 
-    [[nodiscard]] double priceWaterPerL() const noexcept { return priceWaterPerL_; }
-    [[nodiscard]] double priceShampooPerML() const noexcept { return priceShampooPerML_; }
-    [[nodiscard]] double priceWaxPerML() const noexcept { return priceWaxPerML_; }
+    double priceW() const noexcept { return priceW_; }
+    double priceS() const noexcept { return priceS_; }
+    double priceX() const noexcept { return priceX_; }
 
-    [[nodiscard]] double quotePurchaseCost(int w, int s, int x) const {
-        return w * priceWaterPerL_ + s * priceShampooPerML_ + x * priceWaxPerML_;
-    }
+    double quoteBuy(int w, int s, int x) const { return w * priceW_ + s * priceS_ + x * priceX_; }
 
-    bool buyInventory(int w, int s, int x) {
+    bool buy(int w, int s, int x) {
         if (w < 0 || s < 0 || x < 0) return false;
-        double c = quotePurchaseCost(w, s, x);
-        if (c > cash_ + 1e-9) return false;
-        cash_ -= c;
-        inventory_.restock(w, s, x);
+        double c = quoteBuy(w, s, x);
+        if (gtMoney(c, cash_)) return false;
+        cash_ -= r2(c);
+        inv_.add(w, s, x);
         return true;
     }
 
-    [[nodiscard]] double costPerMinutePerBay() const noexcept { return costPerMinutePerBay_; }
+    double costMinPerBay() const noexcept { return costPerMinPerBay_; }
 
-    bool upgradeHours(int add) {
-        if (add <= 0) return false;
-        double unit = costPerMinutePerBay_ * double(bays_.size());
-        double cost = add * unit;
-        if (cost > cash_ + 1e-9) return false;
-        cash_ -= cost;
-        closingMin_ += add;
+    bool addMinutes(int m) {
+        if (m <= 0) return false;
+        double unit = costPerMinPerBay_ * double(nBays_ > 0 ? nBays_ : 1);
+        double cost = m * unit;
+        if (gtMoney(cost, cash_)) return false;
+        cash_ -= r2(cost);
+        closeMin_ += m;
         return true;
     }
 
-    [[nodiscard]] double costUpgradeDeluxe() const noexcept { return costUpgradeDeluxe_; }
-    [[nodiscard]] double costUpgradeWax() const noexcept { return costUpgradeWax_; }
+    double costDeluxe() const noexcept { return costDeluxe_; }
+    double costWax() const noexcept { return costWax_; }
 
-    bool upgradeBay(int id, const std::string& type) {
-        WashBay* tgt = nullptr;
-        for (auto& b : bays_) {
-            if (b.id() == id) { tgt = &b; break; }
+    bool upgradeBay(int id, const std::string& kind) {
+        WashBay* t = nullptr;
+        for (int i = 0; i < nBays_; ++i) {
+            if (bays_[i] && bays_[i]->id() == id) { t = bays_[i]; break; }
         }
-        if (!tgt) return false;
+        if (!t) return false;
 
-        if (equalNoCase(type, "Deluxe")) {
-            if (cash_ + 1e-9 < costUpgradeDeluxe_) return false;
-            cash_ -= costUpgradeDeluxe_;
-            tgt->upgradeDeluxe();
+        if (sameCaseInsensitive(kind, "Deluxe")) {
+            if (!geMoney(cash_, costDeluxe_)) return false;
+            cash_ -= r2(costDeluxe_);
+            t->addDeluxe();
             return true;
         }
-        if (equalNoCase(type, "Wax")) {
-            if (cash_ + 1e-9 < costUpgradeWax_) return false;
-            cash_ -= costUpgradeWax_;
-            tgt->upgradeWax();
+        if (sameCaseInsensitive(kind, "Wax")) {
+            if (!geMoney(cash_, costWax_)) return false;
+            cash_ -= r2(costWax_);
+            t->addWax();
             return true;
         }
         return false;
     }
 
     void endDay() {
-        for (auto& b : bays_) {
-            b.resetTo(openingMin_);
+        for (int i = 0; i < nBays_; ++i) if (bays_[i]) bays_[i]->reset(openMin_);
+        ++day_;
+    }
+
+    int maxBuyW() const { return priceW_ > 0.0 ? int(std::floor(r2(cash_) / priceW_)) : 0; }
+    int maxBuyS() const { return priceS_ > 0.0 ? int(std::floor(r2(cash_) / priceS_)) : 0; }
+    int maxBuyX() const { return priceX_ > 0.0 ? int(std::floor(r2(cash_) / priceX_)) : 0; }
+    int maxAddMin() const {
+        double u = costPerMinPerBay_ * double(nBays_ > 0 ? nBays_ : 1);
+        return u > 0.0 ? int(std::floor(r2(cash_) / u)) : 0;
+    }
+
+    void showServices() const {
+        std::cout << "Services:\n";
+        for (int i = 0; i < nServ_; ++i) if (serv_[i]) std::cout << "  - " << *serv_[i] << "\n";
+    }
+    void showBays() const {
+        std::cout << "Bays (" << nBays_ << "):\n";
+        for (int i = 0; i < nBays_; ++i) if (bays_[i]) {
+            int rem = closeMin_ - bays_[i]->availAt(); if (rem < 0) rem = 0;
+            std::cout << "  " << *bays_[i] << " | remaining=" << rem << "min\n";
         }
-        ++currentDay_;
     }
-
-    [[nodiscard]] int maxAffordableWaterL() const {
-        return priceWaterPerL_ > 0.0 ? int(std::floor(cash_ / priceWaterPerL_)) : 0;
+    void showStatus() const {
+        std::cout << "=== STATUS (Day " << day_ << ") ===\n";
+        std::cout << "Inventory: " << inv_ << "\n";
+        std::cout << "Cash: " << std::fixed << std::setprecision(2) << cash_ << " EUR\n";
+        std::cout << "Hours: open=" << openMin_ << " -> close=" << closeMin_ << " (mins)\n";
+        showBays();
     }
-    [[nodiscard]] int maxAffordableShampooML() const {
-        return priceShampooPerML_ > 0.0 ? int(std::floor(cash_ / priceShampooPerML_)) : 0;
-    }
-    [[nodiscard]] int maxAffordableWaxML() const {
-        return priceWaxPerML_ > 0.0 ? int(std::floor(cash_ / priceWaxPerML_)) : 0;
-    }
-    [[nodiscard]] int maxAffordableMinutes() const {
-        double unit = costPerMinutePerBay_ * double(std::max<size_t>(1, bays_.size()));
-        return unit > 0.0 ? int(std::floor(cash_ / unit)) : 0;
-    }
-    [[nodiscard]] int baysNeedingDeluxe() const {
-        int c = 0;
-        for (const auto& b : bays_) if (!b.supportsDeluxe()) ++c;
-        return c;
-    }
-    [[nodiscard]] int baysNeedingWax() const {
-        int c = 0;
-        for (const auto& b : bays_) if (!b.supportsWax()) ++c;
-        return c;
-    }
-    [[nodiscard]] int maxAffordableDeluxeUpgrades() const {
-        int byCash = int(std::floor(cash_ / costUpgradeDeluxe_));
-        int need = baysNeedingDeluxe();
-        return std::max(0, std::min(byCash, need));
-    }
-    [[nodiscard]] int maxAffordableWaxUpgrades() const {
-        int byCash = int(std::floor(cash_ / costUpgradeWax_));
-        int need = baysNeedingWax();
-        return std::max(0, std::min(byCash, need));
-    }
-
-    [[nodiscard]] const Inventory& inventory() const noexcept { return inventory_; }
-    [[nodiscard]] const std::vector<ServicePackage>& services() const noexcept { return services_; }
-    [[nodiscard]] const std::vector<WashBay>& bays() const noexcept { return bays_; }
-    [[nodiscard]] int openingMin() const noexcept { return openingMin_; }
-    [[nodiscard]] int closingMin() const noexcept { return closingMin_; }
-    [[nodiscard]] int day() const noexcept { return currentDay_; }
-    [[nodiscard]] double cash() const noexcept { return cash_; }
-    [[nodiscard]] int numBays() const noexcept { return int(bays_.size()); }
-    [[nodiscard]] int remainingForBay(const WashBay& b) const {
-        int rem = closingMin_ - b.availableAt();
-        return rem > 0 ? rem : 0;
-    }
-
-    friend std::ostream& operator<<(std::ostream& os, const CarWash& cw) {
-        os << "CarWash (Day " << cw.day() << ")\n"
-           << "  " << cw.inventory() << "\n"
-           << "  Bays (" << cw.bays().size() << "):\n";
-        for (const auto& b : cw.bays()) {
-            os << "    - " << b << " | remaining=" << cw.remainingForBay(b) << "min\n";
-        }
-        os << "  Hours: open " << cw.openingMin() << " -> close " << cw.closingMin()
-           << " (mins)\n  Cash: " << std::fixed << std::setprecision(2) << cw.cash() << " EUR";
-        return os;
-    }
-};
-
-void trim(std::string& s) {
-    while (!s.empty() && std::isspace((unsigned char)s.back())) {
-        s.pop_back();
-    }
-    size_t i = 0;
-    while (i < s.size() && std::isspace((unsigned char)s[i])) {
-        ++i;
-    }
-    s.erase(0, i);
-}
-
-bool toInt(const std::string& in, int& out) {
-    if (in.empty()) {
-        return false;
-    }
-    char* end = nullptr;
-    long v = std::strtol(in.c_str(), &end, 10);
-    if (end == in.c_str() || *end != '\0') {
-        return false;
-    }
-    if (v < std::numeric_limits<int>::min() || v > std::numeric_limits<int>::max()) {
-        return false;
-    }
-    out = int(v);
-    return true;
-}
-
-void printServices(const CarWash& cw) {
-    std::cout << "Services:\n";
-    for (const auto& s : cw.services()) std::cout << "  - " << s << "\n";
-}
-void printBays(const CarWash& cw) {
-    std::cout << "Bays (" << cw.numBays() << " total):\n";
-    for (const auto& b : cw.bays())
-        std::cout << "  " << b << " | remaining=" << cw.remainingForBay(b) << "min\n";
-}
-void printStatus(const CarWash& cw) {
-    std::cout << "=== STATUS (Day " << cw.day() << ") ===\n";
-    std::cout << "Inventory: " << cw.inventory() << "\n";
-    std::cout << "Cash: " << std::fixed << std::setprecision(2) << cw.cash() << " EUR\n";
-    std::cout << "Hours: open=" << cw.openingMin() << " -> close=" << cw.closingMin() << " (mins)\n";
-    printBays(cw);
-}
-
-int main() {
-    constexpr int OPEN  = 8 * 60;
-    constexpr int CLOSE = 12 * 60;
-
-    Inventory inv(3000, 2000, 1500);
-    CarWash cw("ShinyHands", inv, OPEN, CLOSE);
-
-    ServicePackage basic ("Basic",  20,  8.0,  80, 40,  0);
-    ServicePackage deluxe("Deluxe", 35, 14.5, 120, 60,  0);
-    ServicePackage wax   ("Wax",    25, 16.0,  60, 20, 50);
-
-    cw.addService(basic);
-    cw.addService(deluxe);
-    cw.addService(wax);
-
-    WashBay b1(1, OPEN,      "B1");
-    WashBay b2(2, OPEN + 10, "B2");
-    WashBay b3(3, OPEN + 5,  "B3");
-    cw.addBay(b1);
-    cw.addBay(b2);
-    cw.addBay(b3);
-
-    std::cout << "=== INITIAL STATE ===\n" << cw << "\n\n";
-    cw.applyGlobalPriceFactor(1.10);
-    std::cout << "--- After 10% weekend price increase ---\n";
-    for (const auto& s : cw.services()) std::cout << s << "\n";
-    std::cout << "\nType `help` for commands.\n";
-
-    auto printHelp = [&]() {
+    void showHelp() const {
         std::cout
             << "Commands:\n"
             << "  help\n"
@@ -471,130 +367,133 @@ int main() {
             << "  bays\n"
             << "  bayscount\n"
             << "  book <Service> <k>\n"
-            << "  shop (water " << cw.priceWaterPerL() << " EUR/L, "
-            << "shampoo " << cw.priceShampooPerML() << " EUR/ml, "
-            << "wax " << cw.priceWaxPerML() << " EUR/ml; max water=" << cw.maxAffordableWaterL()
-            << ", shampoo=" << cw.maxAffordableShampooML()
-            << ", wax=" << cw.maxAffordableWaxML() << ")\n"
-            << "  upgradehours <minutes> (cost " << cw.costPerMinutePerBay()
-            << " EUR/min/bay; max " << cw.maxAffordableMinutes() << ")\n"
-            << "  upgradebay <id> <Deluxe|Wax> (Deluxe: " << cw.costUpgradeDeluxe()
-            << " EUR, Wax: " << cw.costUpgradeWax() << " EUR; max Deluxe="
-            << cw.maxAffordableDeluxeUpgrades() << ", max Wax=" << cw.maxAffordableWaxUpgrades() << ")\n"
-            << "  endday  (prints status)\n"
+            << "  shop (water " << priceW_ << " EUR/L, shampoo " << priceS_
+            << " EUR/ml, wax " << priceX_ << " EUR/ml; max W=" << maxBuyW()
+            << ", S=" << maxBuyS() << ", X=" << maxBuyX() << ")\n"
+            << "  upgradehours <minutes> (cost " << costPerMinPerBay_
+            << " EUR/min/bay; max " << maxAddMin() << ")\n"
+            << "  upgradebay <id> <Deluxe|Wax> (Deluxe " << costDeluxe_
+            << " EUR, Wax " << costWax_ << " EUR)\n"
+            << "  endday\n"
             << "  endrun\n";
-    };
-
-    std::string line;
-    while (true) {
-        std::cout << "> ";
-        if (!std::getline(std::cin, line)) {
-            break;
-        }
-        trim(line);
-        if (line.empty()) continue;
-
-        std::istringstream iss(line);
-        std::string cmd; iss >> cmd;
-
-        if (cmd == "help") {
-            printHelp();
-        } else if (cmd == "status") {
-            printStatus(cw);
-        } else if (cmd == "services") {
-            printServices(cw);
-        } else if (cmd == "bays") {
-            printBays(cw);
-        } else if (cmd == "bayscount") {
-            std::cout << "Total bays: " << cw.numBays() << "\n";
-        } else if (cmd == "book") {
-            std::string service; int k = 0;
-            if (!(iss >> service >> k)) {
-                std::cout << "Usage: book <Service> <k>\n";
-                continue;
-            }
-            int booked = cw.book(service, k);
-            if (booked == 0) {
-                std::cout << "No suitable bay or not enough time/resources/service.\n";
-            } else {
-                std::cout << "Booked " << booked << " cars for " << service << ".\n";
-            }
-        } else if (cmd == "shop") {
-            int w = 0, s = 0, x = 0; std::string tmp;
-
-            std::cout << "How many liters of water? (max " << cw.maxAffordableWaterL() << "): ";
-            if (!std::getline(std::cin, tmp)) { break; }
-            trim(tmp);
-            toInt(tmp, w);
-
-            std::cout << "How many ml of shampoo? (max " << cw.maxAffordableShampooML() << "): ";
-            if (!std::getline(std::cin, tmp)) { break; }
-            trim(tmp);
-            toInt(tmp, s);
-
-            std::cout << "How many ml of wax? (max " << cw.maxAffordableWaxML() << "): ";
-            if (!std::getline(std::cin, tmp)) { break; }
-            trim(tmp);
-            toInt(tmp, x);
-
-            double cost = cw.quotePurchaseCost(w, s, x);
-            std::cout << "Cost: " << std::fixed << std::setprecision(2) << cost
-                      << " EUR. Confirm (y/n)? ";
-            if (!std::getline(std::cin, tmp)) { break; }
-            trim(tmp);
-            if (!tmp.empty() && (tmp[0] == 'y' || tmp[0] == 'Y')) {
-                if (cw.buyInventory(w, s, x)) {
-                    std::cout << "Purchased. Cash: " << std::fixed << std::setprecision(2)
-                              << cw.cash() << " EUR\n";
-                } else {
-                    std::cout << "Not enough cash.\n";
-                }
-            } else {
-                std::cout << "Cancelled.\n";
-            }
-        } else if (cmd == "upgradehours") {
-            int minutes = 0;
-            if (!(iss >> minutes) || minutes <= 0) {
-                std::cout << "Usage: upgradehours <positive_minutes> (max "
-                          << cw.maxAffordableMinutes() << ")\n";
-                continue;
-            }
-            if (minutes > cw.maxAffordableMinutes()) {
-                std::cout << "You can afford at most " << cw.maxAffordableMinutes() << " minutes.\n";
-                continue;
-            }
-            if (cw.upgradeHours(minutes)) {
-                std::cout << "Closing time extended by " << minutes << " minutes.\n";
-            } else {
-                std::cout << "Not enough cash for hours upgrade.\n";
-            }
-        } else if (cmd == "upgradebay") {
-            int id = 0; std::string type;
-            if (!(iss >> id >> type)) {
-                std::cout << "Usage: upgradebay <id> <Deluxe|Wax> (Deluxe max "
-                          << cw.maxAffordableDeluxeUpgrades() << ", Wax max "
-                          << cw.maxAffordableWaxUpgrades() << ")\n";
-                continue;
-            }
-            if (cw.upgradeBay(id, type)) {
-                std::cout << "Bay " << id << " upgraded with " << type << ".\n";
-            } else {
-                std::cout << "Upgrade failed (check id/type/cash or bay already upgraded).\n";
-            }
-        } else if (cmd == "endday") {
-            cw.endDay();
-            std::cout << "New day started. Bays reset to opening time. Day = "
-                      << cw.day() << ".\n";
-            printStatus(cw);
-            std::cout << "\n";
-        } else if (cmd == "endrun") {
-            break;
-        } else {
-            std::cout << "Unknown command. Type `help`.\n";
-        }
     }
 
-    std::cout << "\n=== FINAL STATE ===\n";
-    printStatus(cw);
+    void run() {
+        std::cout << "=== INITIAL STATE ===\n"; showStatus(); std::cout << "\n";
+        priceAll(1.10);
+        std::cout << "--- After 10% weekend price increase ---\n"; showServices(); std::cout << "\n";
+        std::cout << "Type `help` for commands.\n";
+
+        std::string line;
+        while (true) {
+            std::cout << "> ";
+            if (!std::getline(std::cin, line)) { break; }
+            trim(line);
+            if (line.empty()) { continue; }
+
+            std::istringstream iss(line);
+            std::string cmd; iss >> cmd;
+
+            if (cmd == "help") {
+                showHelp();
+            } else if (cmd == "status") {
+                showStatus();
+            } else if (cmd == "services") {
+                showServices();
+            } else if (cmd == "bays") {
+                showBays();
+            } else if (cmd == "bayscount") {
+                std::cout << "Total bays: " << nBays_ << "\n";
+            } else if (cmd == "book") {
+                std::string svc; int k = 0; iss >> svc >> k;
+                if (svc.empty() || k <= 0) {
+                    std::cout << "Usage: book <Service> <k>\n";
+                    continue;
+                }
+                int got = bookCars(svc, k);
+                if (got == 0) { std::cout << "No time/resources/bay.\n"; }
+                else { std::cout << "Booked " << got << " cars for " << svc << ".\n"; }
+            } else if (cmd == "shop") {
+                std::string t; int w=0, s=0, x=0;
+
+                std::cout << "Water L (max " << maxBuyW() << "): ";
+                if (!std::getline(std::cin, t)) { break; }
+                trim(t); w = toIntOrZero(t);
+
+                std::cout << "Shampoo ml (max " << maxBuyS() << "): ";
+                if (!std::getline(std::cin, t)) { break; }
+                trim(t); s = toIntOrZero(t);
+
+                std::cout << "Wax ml (max " << maxBuyX() << "): ";
+                if (!std::getline(std::cin, t)) { break; }
+                trim(t); x = toIntOrZero(t);
+
+                double cost = quoteBuy(w, s, x);
+                std::cout << "Cost: " << std::fixed << std::setprecision(2) << cost << " EUR. Confirm (y/n)? ";
+                if (!std::getline(std::cin, t)) { break; }
+                trim(t);
+                if (!t.empty() && (t[0] == 'y' || t[0] == 'Y')) {
+                    if (buy(w, s, x)) {
+                        std::cout << "Purchased. Cash: " << std::fixed << std::setprecision(2) << cash_ << " EUR\n";
+                    } else {
+                        std::cout << "Not enough cash.\n";
+                    }
+                } else {
+                    std::cout << "Cancelled.\n";
+                }
+            } else if (cmd == "upgradehours") {
+                int m = 0; iss >> m;
+                if (m <= 0) {
+                    std::cout << "Usage: upgradehours <positive_minutes> (max " << maxAddMin() << ")\n";
+                    continue;
+                }
+                if (m > maxAddMin()) {
+                    std::cout << "You can afford at most " << maxAddMin() << " minutes.\n";
+                    continue;
+                }
+                if (addMinutes(m)) { std::cout << "Closing time extended by " << m << " minutes.\n"; }
+                else { std::cout << "Not enough cash.\n"; }
+            } else if (cmd == "upgradebay") {
+                int id = 0; std::string kind; iss >> id >> kind;
+                if (id <= 0 || kind.empty()) {
+                    std::cout << "Usage: upgradebay <id> <Deluxe|Wax>\n";
+                    continue;
+                }
+                if (upgradeBay(id, kind)) { std::cout << "Bay " << id << " upgraded: " << kind << ".\n"; }
+                else { std::cout << "Upgrade failed.\n"; }
+            } else if (cmd == "endday") {
+                endDay();
+                showStatus();
+                std::cout << "\n";
+            } else if (cmd == "endrun") {
+                break;
+            } else {
+                std::cout << "Unknown. Type `help`.\n";
+            }
+        }
+
+        std::cout << "\n=== FINAL STATE ===\n";
+        showStatus();
+    }
+};
+
+int main() {
+    const int OPEN  = 8 * 60;
+    const int CLOSE = 12 * 60;
+
+    Inventory inv(3000, 2000, 1500);
+    CarWash game("ShinyHands", inv, OPEN, CLOSE);
+
+    ServicePackage s1("Basic",  20,  8.0,  80, 40,  0);
+    ServicePackage s2("Deluxe", 35, 14.5, 120, 60,  0);
+    ServicePackage s3("Wax",    25, 16.0,  60, 20, 50);
+    game.addService(s1); game.addService(s2); game.addService(s3);
+
+    WashBay b1(1, OPEN,      "B1");
+    WashBay b2(2, OPEN + 10, "B2");
+    WashBay b3(3, OPEN + 5,  "B3");
+    game.addBay(b1); game.addBay(b2); game.addBay(b3);
+
+    game.run();
     return 0;
 }
