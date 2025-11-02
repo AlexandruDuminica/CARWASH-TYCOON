@@ -1,12 +1,4 @@
-// Car Wash Tycoon – compatibil cu verificările CI (Cppcheck/Clang-Tidy/ASan/Valgrind)
-// - 4 clase prin compunere: ServicePackage, Inventory, WashBay (Rule of Three), CarWash
-// - ctor cu parametri pentru fiecare, operator<< pentru toate clasele
-// - Rule of Three demonstrat în WashBay (char* label) cu copy ctor / copy op= / dtor corecte
-// - multe metode publice netriviale; const-correct; fără "using namespace std"
-// - scenariu în main + interfață text: help/status/bays/bayscount/book/shop/upgradehours/upgradebay/endday/endrun
-//
-// Notă: pentru a respecta Tema 1 din sablonul tibmax01, clasele expun public API (altfel CI pică).
-
+// Car Wash Tycoon
 #include <algorithm>
 #include <cctype>
 #include <climits>
@@ -37,7 +29,6 @@ public:
           shampooML_(shampooML),
           waxML_(waxML) {}
 
-    // getters const
     const std::string& name() const noexcept { return name_; }
     int duration() const noexcept { return durationMin_; }
     double price() const noexcept { return price_; }
@@ -122,7 +113,6 @@ class WashBay {
     }
 
 public:
-    // ctor cu parametri
     WashBay(int id, int startMin, const std::string& label)
         : id_(id), availableAtMin_(startMin), label_(dupCString(label)) {}
 
@@ -146,7 +136,6 @@ public:
 
     ~WashBay() { delete[] label_; }
 
-    // capabilități
     bool supportsBasic()  const noexcept { return canBasic_; }
     bool supportsDeluxe() const noexcept { return canDeluxe_; }
     bool supportsWax()    const noexcept { return canWax_;   }
@@ -161,7 +150,6 @@ public:
         return false;
     }
 
-    // programare
     int schedule(const ServicePackage& sp, int startMin) {
         const int begin = (startMin > availableAtMin_) ? startMin : availableAtMin_;
         const int finish = begin + sp.duration();
@@ -225,17 +213,14 @@ public:
         : name_(std::move(name)), inventory_(std::move(inv)),
           openingMin_(openAtMin), closingMin_(closeAtMin) {}
 
-    // compunere
     void addService(const ServicePackage& sp) { services_.push_back(sp); }
     void addBay(const WashBay& wb) { bays_.push_back(wb); }
 
-    // funcții netriviale — rezervări ținând cont de capabilități și program
     int book(const std::string& serviceName, int cars) {
         const int idx = findServiceIndex(serviceName);
         if (idx < 0) throw std::runtime_error("service not found");
         const ServicePackage& sp = services_.at(static_cast<std::size_t>(idx));
 
-        // binsearch – câte mașini permite stocul
         int low = 0, high = cars, feasible = 0;
         while (low <= high) {
             const int mid = (low + high) / 2;
@@ -248,7 +233,6 @@ public:
 
         int scheduled = 0;
         for (int i = 0; i < feasible; ++i) {
-            // alegem cel mai devreme bay care suportă serviciul
             auto it = std::min_element(bays_.begin(), bays_.end(),
                 [&](const WashBay& a, const WashBay& b){
                     const int A = a.supportsServiceName(serviceName) ? a.availableAt() : std::numeric_limits<int>::max()/2;
@@ -266,7 +250,6 @@ public:
                 cash_ += sp.price();
                 ++scheduled;
             } else {
-                // revenim consumul pentru mașina care ar depăși programul
                 inventory_.restock(sp.needWater(), sp.needShampoo(), sp.needWax());
                 break;
             }
@@ -274,7 +257,6 @@ public:
         return scheduled;
     }
 
-    // ajustări de preț
     void applyGlobalPriceFactor(double factor) {
         for (auto& s : services_) s.applyPriceFactor(factor);
     }
@@ -392,7 +374,7 @@ public:
     }
 };
 
-// ——— Afișări helper (fără IO în clasele model) ———
+// ——— Afișări helper ———
 static void printServices(const CarWash& cw) {
     std::cout << "Services:\n";
     for (const auto& s : cw.services()) std::cout << "  - " << s << "\n";
@@ -474,7 +456,7 @@ int main() {
         std::string line;
         while (true) {
             std::cout << "> ";
-            if (!std::getline(std::cin, line)) break;
+            if (!std::getline(std::cin, line)) { break; }  // braces --> avoid misleading-indentation
             trim(line);
             if (line.empty()) continue;
 
@@ -513,19 +495,22 @@ int main() {
                 std::string tmp;
 
                 std::cout << "How many liters of water? (max " << cw.maxAffordableWaterL() << "): ";
-                if (!std::getline(std::cin, tmp)) break; trim(tmp);
+                if (!std::getline(std::cin, tmp)) { break; }
+                trim(tmp);
                 if (!tmp.empty()) {
                     try { w = std::max(0, std::stoi(tmp)); } catch (...) { w = 0; }
                 }
 
                 std::cout << "How many ml of shampoo? (max " << cw.maxAffordableShampooML() << "): ";
-                if (!std::getline(std::cin, tmp)) break; trim(tmp);
+                if (!std::getline(std::cin, tmp)) { break; }
+                trim(tmp);
                 if (!tmp.empty()) {
                     try { s = std::max(0, std::stoi(tmp)); } catch (...) { s = 0; }
                 }
 
                 std::cout << "How many ml of wax? (max " << cw.maxAffordableWaxML() << "): ";
-                if (!std::getline(std::cin, tmp)) break; trim(tmp);
+                if (!std::getline(std::cin, tmp)) { break; }
+                trim(tmp);
                 if (!tmp.empty()) {
                     try { x = std::max(0, std::stoi(tmp)); } catch (...) { x = 0; }
                 }
@@ -533,7 +518,8 @@ int main() {
                 const double cost = cw.quotePurchaseCost(w, s, x);
                 std::cout << "Cost: " << std::fixed << std::setprecision(2) << cost
                           << " EUR. Confirm (y/n)? ";
-                if (!std::getline(std::cin, tmp)) break; trim(tmp);
+                if (!std::getline(std::cin, tmp)) { break; }
+                trim(tmp);
                 if (!tmp.empty() && (tmp[0] == 'y' || tmp[0] == 'Y')) {
                     if (cw.buyInventory(w, s, x)) {
                         std::cout << "Purchased. Cash: " << std::fixed << std::setprecision(2)
@@ -594,5 +580,3 @@ int main() {
         return 1;
     }
 }
-
-
