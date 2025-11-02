@@ -1,4 +1,3 @@
-// Car Wash Tycoon – Clang-Tidy/Cppcheck friendly (nodiscard, ranges::min_element, constexpr)
 
 #include <algorithm>
 #include <cctype>
@@ -102,7 +101,7 @@ public:
 class WashBay {
     int id_;
     int availableAtMin_;
-    char* label_;  // Rule of Three demo
+    char* label_;
     bool canBasic_{true};
     bool canDeluxe_{false};
     bool canWax_{false};
@@ -117,7 +116,7 @@ public:
     WashBay(int id, int startMin, const std::string& label)
         : id_(id), availableAtMin_(startMin), label_(dupCString(label)) {}
 
-    // Rule of Three
+
     WashBay(const WashBay& other)
         : id_(other.id_), availableAtMin_(other.availableAtMin_), label_(dupCString(other.label_)),
           canBasic_(other.canBasic_), canDeluxe_(other.canDeluxe_), canWax_(other.canWax_) {}
@@ -193,9 +192,9 @@ class CarWash {
     double priceWaxPerML_{0.05};
 
     // upgrade prices
-    double costPerMinutePerBay_{0.50}; // EUR/min/bay
-    double costUpgradeDeluxe_{200.0};  // EUR/bay
-    double costUpgradeWax_{150.0};     // EUR/bay
+    double costPerMinutePerBay_{0.50};
+    double costUpgradeDeluxe_{200.0};
+    double costUpgradeWax_{150.0};
 
     static bool equalNoCase(const std::string& a, const std::string& b) {
         if (a.size() != b.size()) return false;
@@ -294,7 +293,7 @@ public:
         return true;
     }
 
-    // UPGRADE capabilități pe bay
+    // UPGRADE capabilitati pe bay
     [[nodiscard]] double costUpgradeDeluxe() const noexcept { return costUpgradeDeluxe_; }
     [[nodiscard]] double costUpgradeWax() const noexcept    { return costUpgradeWax_; }
     bool upgradeBay(int id, const std::string& type) {
@@ -379,7 +378,6 @@ public:
     }
 };
 
-// ——— Helpers (fără IO în clase) ———
 static void printServices(const CarWash& cw) {
     std::cout << "Services:\n";
     for (const auto& s : cw.services()) std::cout << "  - " << s << "\n";
