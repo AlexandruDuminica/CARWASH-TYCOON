@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cctype>
 #include <cmath>
 #include <cstdlib>
@@ -367,13 +368,13 @@ public:
             << "  bays\n"
             << "  bayscount\n"
             << "  book <Service> <k>\n"
-            << "  shop (water " << priceW_ << " EUR/L, shampoo " << priceS_
-            << " EUR/ml, wax " << priceX_ << " EUR/ml; max W=" << maxBuyW()
+            << "  shop (water " << priceW() << " EUR/L, shampoo " << priceS()
+            << " EUR/ml, wax " << priceX() << " EUR/ml; max W=" << maxBuyW()
             << ", S=" << maxBuyS() << ", X=" << maxBuyX() << ")\n"
-            << "  upgradehours <minutes> (cost " << costPerMinPerBay_
+            << "  upgradehours <minutes> (cost " << costMinPerBay()
             << " EUR/min/bay; max " << maxAddMin() << ")\n"
-            << "  upgradebay <id> <Deluxe|Wax> (Deluxe " << costDeluxe_
-            << " EUR, Wax " << costWax_ << " EUR)\n"
+            << "  upgradebay <id> <Deluxe|Wax> (Deluxe " << costDeluxe()
+            << " EUR, Wax " << costWax() << " EUR)\n"
             << "  endday\n"
             << "  endrun\n";
     }
@@ -391,7 +392,7 @@ public:
             trim(line);
             if (line.empty()) { continue; }
 
-            std::istringstream iss(line);
+            std::istringstream iss(line); // <-- fix
             std::string cmd; iss >> cmd;
 
             if (cmd == "help") {
