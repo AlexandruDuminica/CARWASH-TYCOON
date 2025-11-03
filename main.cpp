@@ -392,7 +392,7 @@ public:
             trim(line);
             if (line.empty()) { continue; }
 
-            std::istringstream iss(line); // <-- fix
+            std::istringstream iss(line);
             std::string cmd; iss >> cmd;
 
             if (cmd == "help") {
