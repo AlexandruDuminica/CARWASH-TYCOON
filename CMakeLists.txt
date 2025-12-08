@@ -79,6 +79,17 @@ add_executable(${MAIN_EXECUTABLE_NAME}
         Goal.h
         GoalManager.cpp
         GoalManager.h
+        Event.cpp
+        Event.h
+        EventManager.cpp
+        EventManager.h
+        ReputationManager.cpp
+        ReputationManager.h
+        PricingStrategy.cpp
+        PricingStrategy.h
+        DailyReports.cpp
+        DailyReports.h
+        DailyReport.h
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )

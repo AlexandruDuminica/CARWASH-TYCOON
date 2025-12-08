@@ -30,6 +30,10 @@ CarWash::CarWash(std::string n, Inventory inv, int openM, int closeM)
         50, "Spala cel putin 50 de masini"));
     goals_.add(std::make_unique<RatingGoal>(
         4.0, "Pastreaza satisfactia medie peste 4.0"));
+
+    pricing_ = std::make_unique<BalancedPricing>();
+
+    currentReport_.beginDay(day_);
 }
 
 bool CarWash::sameCaseInsensitive(const std::string& a,
@@ -93,13 +97,56 @@ int CarWash::bookCars(const std::string& serviceName, int cars) {
     return booked;
 }
 
+void CarWash::adjustServicePrices(double factor) {
+    if (factor <= 0.0) return;
+    for (auto& s : services_) {
+        if (s) s->applyFactor(factor);
+    }
+}
+
+void CarWash::applyPricingStrategy() {
+    if (pricing_) {
+        pricing_->apply(*this);
+    }
+}
+
+void CarWash::setPricingMode(const std::string& mode) {
+    if (mode == "aggressive") {
+        pricing_ = std::make_unique<AggressivePricing>();
+    } else if (mode == "conservative") {
+        pricing_ = std::make_unique<ConservativePricing>();
+    } else {
+        pricing_ = std::make_unique<BalancedPricing>();
+    }
+    logEvent("Schimbare strategie preturi: " + pricing_->name());
+}
+
 void CarWash::endCurrentDay() {
+    double dailyAvgSat = dailySatisfiedCustomers_ > 0
+                         ? dailySatisfactionSum_ / dailySatisfiedCustomers_
+                         : 0.0;
+
+    currentReport_.finalize(dailyCarsServed_, dailyLost_,
+                            dailyAvgSat, dailyRevenue_);
+    reports_.push_back(currentReport_);
+
+    dailyCarsServed_ = 0;
+    dailySatisfactionSum_ = 0.0;
+    dailySatisfiedCustomers_ = 0;
+    dailyLost_ = 0;
+    dailyRevenue_ = 0.0;
+
     for (auto& b : bays_) {
         b->reset(openMin_);
     }
     nowMin_ = openMin_;
-    ++day_;
     goals_.checkAll(*this);
+
+    events_.startNewDay(*this);
+    applyPricingStrategy();
+
+    ++day_;
+    currentReport_.beginDay(day_);
 
     std::cout << "--- Ziua a fost incheiata. Ziua curenta: " << day_ << " ---\n";
 }
@@ -130,6 +177,8 @@ void CarWash::simulateHour() {
         const WashService* chosen = customer->chooseService(servicePtrs);
         if (!chosen) {
             queue_.failOne();
+            ++dailyLost_;
+            reputation_.onLost();
             demand_.fail();
             continue;
         }
@@ -141,17 +190,30 @@ void CarWash::simulateHour() {
                 double sat = customer->satisfaction() + comfortBonus_;
                 if (sat > 5.0) sat = 5.0;
                 if (sat < 0.0) sat = 0.0;
+
                 totalCarsServed_++;
                 totalSatisfaction_ += sat;
                 totalSatisfiedCustomers_++;
+
+                dailyCarsServed_++;
+                dailySatisfactionSum_ += sat;
+                dailySatisfiedCustomers_++;
+                dailyRevenue_ += chosen->price();
+                currentReport_.addServiceSale(chosen->name(), chosen->price());
+
                 processed++;
+                reputation_.onServed(sat);
                 demand_.success();
             } else {
                 queue_.failOne();
+                ++dailyLost_;
+                reputation_.onLost();
                 demand_.fail();
             }
         } catch (const CarWashException&) {
             queue_.failOne();
+            ++dailyLost_;
+            reputation_.onLost();
             demand_.fail();
         }
     }
@@ -235,6 +297,7 @@ void CarWash::showDashboard() const {
     std::cout << "Cash: " << std::fixed << std::setprecision(2) << cash_ << " EUR\n";
     std::cout << "Cars served: " << totalCarsServed_ << "\n";
     std::cout << "Avg satisfaction: " << std::setprecision(2) << averageSatisfaction() << "\n";
+    std::cout << "Reputation score: " << std::setprecision(2) << reputation_.score() << "\n";
     std::cout << "Queue: " << queue_ << "\n";
     std::cout << "SpeedFactor: " << speedFactor_
               << " | ComfortBonus: " << comfortBonus_ << "\n";
@@ -242,21 +305,35 @@ void CarWash::showDashboard() const {
     std::cout << "================================\n";
 }
 
+void CarWash::showReports() const {
+    if (reports_.empty()) {
+        std::cout << "Nu exista inca rapoarte zilnice.\n";
+        return;
+    }
+    std::cout << "=== Rapoarte zilnice ===\n";
+    for (const auto& r : reports_) {
+        std::cout << r << "\n";
+    }
+}
+
 void CarWash::showHelp() const {
     std::cout
         << "Comenzi:\n"
-        << "  help         - afiseaza acest mesaj\n"
-        << "  status       - stare detaliata\n"
-        << "  services     - lista servicii\n"
-        << "  bays         - lista bai\n"
-        << "  queue        - info coada\n"
-        << "  next         - simuleaza o ora\n"
-        << "  endday       - incheie manual ziua curenta\n"
-        << "  dashboard    - afiseaza rezumat tycoon\n"
-        << "  goals        - afiseaza obiective si procent progess\n"
-        << "  upgrades     - lista upgrade-uri\n"
-        << "  buyupgrade X - cumpara upgrade (1..3)\n"
-        << "  endrun       - termina simularea\n";
+        << "  help           - afiseaza acest mesaj\n"
+        << "  status         - stare detaliata\n"
+        << "  services       - lista servicii\n"
+        << "  bays           - lista bai\n"
+        << "  queue          - info coada\n"
+        << "  next           - simuleaza o ora\n"
+        << "  endday         - incheie manual ziua curenta\n"
+        << "  dashboard      - afiseaza rezumat tycoon\n"
+        << "  goals          - afiseaza obiective si progres\n"
+        << "  upgrades       - lista upgrade-uri\n"
+        << "  buyupgrade X   - cumpara upgrade (1..3)\n"
+        << "  setpricing M   - seteaza strategia de preturi (aggressive|balanced|conservative)\n"
+        << "  reports        - afiseaza rapoarte zilnice\n"
+        << "  events         - afiseaza evenimentele zilei curente\n"
+        << "  endrun         - termina simularea\n";
 }
 
 void CarWash::buyUpgrade(int id) {
@@ -272,6 +349,10 @@ void CarWash::buyUpgrade(int id) {
     cash_ -= u->cost();
     u->apply(*this);
     purchased_.push_back(std::move(u));
+}
+
+void CarWash::logEvent(const std::string& msg) const {
+    std::cout << "[LOG] " << msg << "\n";
 }
 
 void CarWash::run() {
@@ -315,6 +396,14 @@ void CarWash::run() {
                 if (id <= 0) throw InvalidCommandException("Folosire: buyupgrade <id>");
                 buyUpgrade(id);
                 showDashboard();
+            } else if (cmd == "setpricing") {
+                std::string mode; iss >> mode;
+                if (mode.empty()) throw InvalidCommandException("Folosire: setpricing <aggressive|balanced|conservative>");
+                setPricingMode(mode);
+            } else if (cmd == "reports") {
+                showReports();
+            } else if (cmd == "events") {
+                events_.print(std::cout);
             } else if (cmd == "endrun") {
                 break;
             } else if (cmd.empty()) {
