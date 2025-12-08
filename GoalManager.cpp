@@ -33,7 +33,7 @@ double GoalManager::completionRatio() const {
     return static_cast<double>(done) / static_cast<double>(total);
 }
 
-void GoalManager::print(std::ostream& os, const CarWash& wash) const {
+void GoalManager::print(std::ostream& os, const CarWash& /*wash*/) const {
     os << "Obiective:\n";
     if (goals_.empty()) {
         os << "  (niciun obiectiv definit)\n";
@@ -42,7 +42,7 @@ void GoalManager::print(std::ostream& os, const CarWash& wash) const {
 
     for (const auto& g : goals_) {
         if (!g) continue;
-        double p = g->progress(wash) * 100.0;
+        double p = g->progress() * 100.0;
         if (p < 0.0) p = 0.0;
         if (p > 100.0) p = 100.0;
         os << "  - " << g->description()

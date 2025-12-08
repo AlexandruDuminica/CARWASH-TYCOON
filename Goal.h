@@ -9,6 +9,13 @@ class Goal {
 protected:
     std::string description_;
     bool achieved_{false};
+    double lastProgress_{0.0}; // 0.0 .. 1.0
+
+    void setProgressInternal(double p) {
+        if (p < 0.0) p = 0.0;
+        if (p > 1.0) p = 1.0;
+        lastProgress_ = p;
+    }
 
 public:
     explicit Goal(std::string desc)
@@ -19,11 +26,11 @@ public:
     const std::string& description() const noexcept { return description_; }
     bool isAchieved() const noexcept { return achieved_; }
 
-    // verifică dacă obiectivul este atins, actualizează intern achieved_
+    // verifica si actualizeaza progresul + achieved_
     virtual bool check(const CarWash& wash) = 0;
 
-    // progres între 0.0 și 1.0
-    virtual double progress(const CarWash& wash) const = 0;
+    // acces la progres (NU mai depinde de CarWash)
+    double progress() const noexcept { return lastProgress_; }
 };
 
 class ProfitGoal : public Goal {
@@ -33,7 +40,6 @@ public:
         : Goal(std::move(desc)), target_(target) {}
 
     bool check(const CarWash& wash) override;
-    double progress(const CarWash& wash) const override;
 };
 
 class CarsServedGoal : public Goal {
@@ -43,7 +49,6 @@ public:
         : Goal(std::move(desc)), target_(target) {}
 
     bool check(const CarWash& wash) override;
-    double progress(const CarWash& wash) const override;
 };
 
 class RatingGoal : public Goal {
@@ -53,5 +58,4 @@ public:
         : Goal(std::move(desc)), target_(target) {}
 
     bool check(const CarWash& wash) override;
-    double progress(const CarWash& wash) const override;
 };
