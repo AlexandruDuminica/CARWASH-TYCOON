@@ -2,20 +2,20 @@
 
 #include <iosfwd>
 
-// forward declaration, nu avem nevoie de detaliile clasei aici
+// Forward declaration: nu avem nevoie de detaliile clasei aici
 class WashService;
 
 class Inventory {
-    int wL_;
-    int sML_;
-    int xML_;
+    int wL_;   // apa (L)
+    int sML_;  // sampon (ml)
+    int xML_;  // ceara (ml)
 
 public:
     explicit Inventory(int w = 0, int s = 0, int x = 0);
 
     void add(int w, int s, int x);
 
-    // folosim WashService ca tip, dar implementarea din .cpp nu depinde de API-ul lui
+    // Consuma resursele necesare pentru 'cars' masini ale serviciului dat
     bool takeIfCan(const WashService& sp, int cars);
 
     int w() const noexcept { return wL_; }
