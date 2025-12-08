@@ -67,6 +67,10 @@ add_executable(${MAIN_EXECUTABLE_NAME}
         EcoService.h
         WashService.cpp
         WashService.h
+        CarQueue.cpp
+        CarQueue.h
+        DemandManager.cpp
+        DemandManager.h
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
