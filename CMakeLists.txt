@@ -50,6 +50,23 @@ include(cmake/CopyHelper.cmake)
 # NOTE: update executable name in .github/workflows/cmake.yml:25 when changing name here
 add_executable(${MAIN_EXECUTABLE_NAME}
     main.cpp
+        CarWash.cpp
+        CarWash.h
+        CarWashExceptions.h
+        WashBay.cpp
+        WashBay.h
+        Inventory.cpp
+        Inventory.h
+        BasicService.cpp
+        BasicService.h
+        DeluxeService.cpp
+        DeluxeService.h
+        WaxService.cpp
+        WaxService.h
+        EcoService.cpp
+        EcoService.h
+        WashService.cpp
+        WashService.h
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )
