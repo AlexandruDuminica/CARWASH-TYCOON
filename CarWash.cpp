@@ -385,10 +385,10 @@ void CarWash::run() {
     showDashboard();
 
 #ifdef GITHUB_ACTIONS
-    // Mod de rulare pentru CI: apelăm explicit API-urile principale
-    // ca să nu fie raportate ca unusedFunction și simulăm puțin jocul.
+    // Mod de rulare pentru CI: exercitam API-urile principale o singură dată,
+    // fără buclă de input, ca să evităm problemele de stack și unusedFunction.
     try {
-        // afisări de stare
+        // Stare detaliată
         showStatus();
         showServices();
         showBays();
@@ -396,15 +396,15 @@ void CarWash::run() {
         showUpgrades();
         showReports();
 
-        // folosim si logica de pricing + simulare ora
+        // Strategia de prețuri și o oră de simulare
         setPricingMode("balanced");
-        nextCommand();          // simuleaza o ora + dashboard
+        nextCommand();      // simulează o oră și afișează dashboard
 
-        // încercăm un upgrade; dacă nu sunt bani, e prins mai jos
+        // Încercăm un upgrade (dacă nu sunt bani, excepția e ignorată aici)
         try {
             buyUpgrade(1);
         } catch (const CarWashException&) {
-            // ignorăm, ne interesează doar să fie folosită functia
+            // ignorăm, ne interesează doar să fie folosită funcția
         }
 
         showDashboard();
