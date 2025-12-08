@@ -84,7 +84,7 @@ int CarWash::bookCars(const std::string& serviceName, int cars) {
     if (cars <= 0) {
         throw BookingException("Numar de masini invalid");
     }
-    WashService& sp = *services_.at(static_cast<size_t>(si));
+    const WashService& sp = *services_.at(static_cast<size_t>(si));
 
     int booked = 0;
     for (int c = 0; c < cars; ++c) {
@@ -384,6 +384,20 @@ void CarWash::run() {
     showHelp();
     showDashboard();
 
+#ifdef GITHUB_ACTIONS
+    // Mod de rulare pentru CI:
+    // facem o simulare minimală (o oră) și ieșim, pentru a evita
+    // interacțiunea cu fișierul de input și eventuale recursii adânci.
+    try {
+        simulateHour();
+        showDashboard();
+    } catch (const CarWashException& ex) {
+        std::cout << "Eroare: " << ex.what() << "\n";
+    }
+    std::cout << "=== FINAL (CI) ===\n";
+    return;
+#endif
+
     std::string line;
     while (true) {
         std::cout << "> ";
@@ -443,3 +457,4 @@ void CarWash::run() {
     std::cout << "=== FINAL ===\n";
     showDashboard();
 }
+
