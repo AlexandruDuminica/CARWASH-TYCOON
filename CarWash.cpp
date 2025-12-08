@@ -385,9 +385,7 @@ void CarWash::run() {
     showDashboard();
 
 #ifdef GITHUB_ACTIONS
-    // Mod de rulare pentru CI:
-    // facem o simulare minimală (o oră) și ieșim, pentru a evita
-    // interacțiunea cu fișierul de input și eventuale recursii adânci.
+    // Mod de rulare pentru CI: simulare minimală și ieșire.
     try {
         simulateHour();
         showDashboard();
@@ -395,13 +393,13 @@ void CarWash::run() {
         std::cout << "Eroare: " << ex.what() << "\n";
     }
     std::cout << "=== FINAL (CI) ===\n";
-    return;
-#endif
-
+#else
     std::string line;
     while (true) {
         std::cout << "> ";
-        if (!std::getline(std::cin, line)) break;
+        if (!std::getline(std::cin, line)) {
+            break;
+        }
 
         try {
             std::istringstream iss(line);
@@ -430,13 +428,20 @@ void CarWash::run() {
             } else if (cmd == "upgrades") {
                 showUpgrades();
             } else if (cmd == "buyupgrade") {
-                int id = 0; iss >> id;
-                if (id <= 0) throw InvalidCommandException("Folosire: buyupgrade <id>");
+                int id = 0;
+                iss >> id;
+                if (id <= 0) {
+                    throw InvalidCommandException("Folosire: buyupgrade <id>");
+                }
                 buyUpgrade(id);
                 showDashboard();
             } else if (cmd == "setpricing") {
-                std::string mode; iss >> mode;
-                if (mode.empty()) throw InvalidCommandException("Folosire: setpricing <aggressive|balanced|conservative>");
+                std::string mode;
+                iss >> mode;
+                if (mode.empty()) {
+                    throw InvalidCommandException(
+                        "Folosire: setpricing <aggressive|balanced|conservative>");
+                }
                 setPricingMode(mode);
             } else if (cmd == "reports") {
                 showReports();
@@ -456,5 +461,7 @@ void CarWash::run() {
 
     std::cout << "=== FINAL ===\n";
     showDashboard();
+#endif
 }
+
 
