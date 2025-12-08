@@ -71,6 +71,14 @@ add_executable(${MAIN_EXECUTABLE_NAME}
         CarQueue.h
         DemandManager.cpp
         DemandManager.h
+        Customer.h
+        Customer.cpp
+        Upgrade.cpp
+        Upgrade.h
+        Goal.cpp
+        Goal.h
+        GoalManager.cpp
+        GoalManager.h
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )

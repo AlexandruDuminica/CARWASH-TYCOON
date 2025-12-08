@@ -1,16 +1,13 @@
 #pragma once
+
 #include <deque>
-#include <string>
-#include <vector>
+#include <memory>
 #include <iosfwd>
 
-class CarQueue {
-    struct CarRequest {
-        std::string service;
-        int id;
-    };
+#include "Customer.h"
 
-    std::deque<CarRequest> q_;
+class CarQueue {
+    std::deque<std::unique_ptr<Customer>> q_;
     int nextId_{1};
     int demandPerHour_{2};
     int lost_{0};
@@ -18,14 +15,15 @@ class CarQueue {
 public:
     CarQueue() = default;
 
-    void generate(const std::vector<std::string> &services);
+    // creeaza demandPerHour_ clienti random si ii pune in coada
+    void generateRandomCustomers();
 
     bool empty() const { return q_.empty(); }
     int  size()  const { return static_cast<int>(q_.size()); }
     int  lostCustomers() const { return lost_; }
     int  demand() const { return demandPerHour_; }
 
-    std::string pop();
+    std::unique_ptr<Customer> pop();
     void failOne();
 
     void increaseDemand();
