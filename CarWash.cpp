@@ -93,10 +93,20 @@ int CarWash::bookCars(const std::string& serviceName, int cars) {
     return booked;
 }
 
+void CarWash::endCurrentDay() {
+    for (auto& b : bays_) {
+        b->reset(openMin_);
+    }
+    nowMin_ = openMin_;
+    ++day_;
+    goals_.checkAll(*this);
+
+    std::cout << "--- Ziua a fost incheiata. Ziua curenta: " << day_ << " ---\n";
+}
+
 void CarWash::simulateHour() {
     nowMin_ += 60;
 
-    // crestere cerere din upgrade-uri
     int extra = baseDemandBonus_ > 0 ? baseDemandBonus_ : 0;
     for (int i = 0; i < extra; ++i) {
         queue_.increaseDemand();
@@ -152,12 +162,7 @@ void CarWash::simulateHour() {
     if (adj != 0) demand_.reset();
 
     if (nowMin_ >= closeMin_) {
-        for (auto& b : bays_) {
-            b->reset(openMin_);
-        }
-        nowMin_ = openMin_;
-        ++day_;
-        goals_.checkAll(*this);
+        endCurrentDay();
     }
 
     std::cout << "Ora simulata: procesate=" << processed
@@ -205,7 +210,7 @@ void CarWash::showStatus() const {
 }
 
 void CarWash::showGoals() const {
-    std::cout << goals_;
+    goals_.print(std::cout, *this);
 }
 
 void CarWash::showUpgrades() const {
@@ -226,13 +231,14 @@ void CarWash::showUpgrades() const {
 
 void CarWash::showDashboard() const {
     std::cout << "=========== DASHBOARD ==========\n";
+    std::cout << "Ziua: " << day_ << "\n";
     std::cout << "Cash: " << std::fixed << std::setprecision(2) << cash_ << " EUR\n";
     std::cout << "Cars served: " << totalCarsServed_ << "\n";
     std::cout << "Avg satisfaction: " << std::setprecision(2) << averageSatisfaction() << "\n";
     std::cout << "Queue: " << queue_ << "\n";
     std::cout << "SpeedFactor: " << speedFactor_
               << " | ComfortBonus: " << comfortBonus_ << "\n";
-    std::cout << goals_;
+    goals_.print(std::cout, *this);
     std::cout << "================================\n";
 }
 
@@ -245,8 +251,9 @@ void CarWash::showHelp() const {
         << "  bays         - lista bai\n"
         << "  queue        - info coada\n"
         << "  next         - simuleaza o ora\n"
+        << "  endday       - incheie manual ziua curenta\n"
         << "  dashboard    - afiseaza rezumat tycoon\n"
-        << "  goals        - afiseaza obiective\n"
+        << "  goals        - afiseaza obiective si procent progess\n"
         << "  upgrades     - lista upgrade-uri\n"
         << "  buyupgrade X - cumpara upgrade (1..3)\n"
         << "  endrun       - termina simularea\n";
@@ -294,6 +301,9 @@ void CarWash::run() {
                 showQueue();
             } else if (cmd == "next") {
                 nextCommand();
+            } else if (cmd == "endday") {
+                endCurrentDay();
+                showDashboard();
             } else if (cmd == "dashboard") {
                 showDashboard();
             } else if (cmd == "goals") {

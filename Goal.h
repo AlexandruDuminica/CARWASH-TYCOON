@@ -2,7 +2,6 @@
 
 #include <string>
 #include <iosfwd>
-#include <memory>
 
 class CarWash;
 
@@ -12,16 +11,19 @@ protected:
     bool achieved_{false};
 
 public:
-    explicit Goal(std::string desc) : description_(std::move(desc)) {}
+    explicit Goal(std::string desc)
+        : description_(std::move(desc)) {}
+
     virtual ~Goal() = default;
 
     const std::string& description() const noexcept { return description_; }
     bool isAchieved() const noexcept { return achieved_; }
 
+    // verifică dacă obiectivul este atins, actualizează intern achieved_
     virtual bool check(const CarWash& wash) = 0;
-    virtual void print(std::ostream& os) const;
 
-    friend std::ostream& operator<<(std::ostream&, const Goal&);
+    // progres între 0.0 și 1.0
+    virtual double progress(const CarWash& wash) const = 0;
 };
 
 class ProfitGoal : public Goal {
@@ -31,6 +33,7 @@ public:
         : Goal(std::move(desc)), target_(target) {}
 
     bool check(const CarWash& wash) override;
+    double progress(const CarWash& wash) const override;
 };
 
 class CarsServedGoal : public Goal {
@@ -40,6 +43,7 @@ public:
         : Goal(std::move(desc)), target_(target) {}
 
     bool check(const CarWash& wash) override;
+    double progress(const CarWash& wash) const override;
 };
 
 class RatingGoal : public Goal {
@@ -49,4 +53,5 @@ public:
         : Goal(std::move(desc)), target_(target) {}
 
     bool check(const CarWash& wash) override;
+    double progress(const CarWash& wash) const override;
 };

@@ -44,6 +44,9 @@ class CarWash {
     bool sameCaseInsensitive(const std::string& a,const std::string& b) const;
     int  findService(const std::string& name) const;
 
+    // finalizează o zi (fie la sfârșit de program, fie manual)
+    void endCurrentDay();
+
 public:
     CarWash(std::string n, Inventory inv, int openM, int closeM);
 
