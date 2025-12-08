@@ -1,5 +1,4 @@
 #pragma once
-
 #include <string>
 #include <iosfwd>
 #include <memory>
@@ -13,8 +12,7 @@ protected:
     int shampooMl_{};
     int waxMl_{};
 
-    // afișare virtuală; interfață non-virtuală este operator<<
-    virtual void print(std::ostream& os) const = 0;
+    virtual void print(std::ostream &os) const = 0;
 
 public:
     WashService(std::string name, int durationMin, double basePrice,
@@ -22,20 +20,19 @@ public:
 
     virtual ~WashService() = default;
 
-    const std::string& name() const noexcept { return name_; }
-    int duration() const noexcept { return durationMin_; }
-    double price() const noexcept { return basePrice_; }
-    int needW() const noexcept { return waterL_; }
-    int needS() const noexcept { return shampooMl_; }
-    int needX() const noexcept { return waxMl_; }
+    const std::string& name()   const noexcept { return name_; }
+    int duration()              const noexcept { return durationMin_; }
+    double price()              const noexcept { return basePrice_; }
+    int needW()                 const noexcept { return waterL_; }
+    int needS()                 const noexcept { return shampooMl_; }
+    int needX()                 const noexcept { return waxMl_; }
 
     bool applyFactor(double f);
 
-    // funcție virtuală pură specifică temei
     virtual double finalPriceForCars(int cars) const = 0;
+    virtual double rating() const { return 4.0; }
 
-    // constructor virtual (clone)
     virtual std::unique_ptr<WashService> clone() const = 0;
 
-    friend std::ostream& operator<<(std::ostream& os, const WashService& s);
+    friend std::ostream& operator<<(std::ostream&, const WashService&);
 };

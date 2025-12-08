@@ -2,19 +2,21 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <iostream>
+#include <iosfwd>
 
 #include "Inventory.h"
 #include "WashBay.h"
 #include "WashService.h"
 #include "CarQueue.h"
 #include "DemandManager.h"
+#include "CarWashExceptions.h"
+#include "DeluxeService.h"
 
 class CarWash {
     std::string name_;
     Inventory   inv_;
     std::vector<std::unique_ptr<WashService>> services_;
-    std::vector<std::unique_ptr<WashBay>> bays_;
+    std::vector<std::unique_ptr<WashBay>>     bays_;
 
     double cash_{0.0};
     int openMin_;
@@ -28,14 +30,18 @@ class CarWash {
     static constexpr int MAX_SERV = 20;
     static constexpr int MAX_BAYS = 20;
 
-    bool sameCaseInsensitive(const std::string& a,const std::string& b) const;
-    int  findService(const std::string& name) const;
+    bool sameCaseInsensitive(const std::string &a,
+                             const std::string &b) const;
+    int  findService(const std::string &name) const;
 
 public:
     CarWash(std::string n, Inventory inv, int openM, int closeM);
 
-    bool addService(const WashService& s);
-    bool addBay(const WashBay& b);
+    bool addService(const WashService &s);
+    bool addBay(const WashBay &b);
+
+    int bookCars(const std::string &serviceName, int cars);
+    void priceAll(double f);
 
     void simulateHour();
     void showQueue() const;

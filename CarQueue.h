@@ -2,6 +2,7 @@
 #include <deque>
 #include <string>
 #include <vector>
+#include <iosfwd>
 
 class CarQueue {
     struct CarRequest {
@@ -9,37 +10,27 @@ class CarQueue {
         int id;
     };
 
-    std::deque<CarRequest> q;
-    int nextId{1};
-    int demandPerHour{2};
-    int lost{0};
+    std::deque<CarRequest> q_;
+    int nextId_{1};
+    int demandPerHour_{2};
+    int lost_{0};
 
 public:
     CarQueue() = default;
 
-    void generate(const std::vector<std::string>& services) {
-        for(int i = 0; i < demandPerHour; i++) {
-            if(!services.empty()) {
-                q.push_back({services[rand()%services.size()], nextId++});
-            }
-        }
-    }
+    void generate(const std::vector<std::string> &services);
 
-    bool empty() const { return q.empty(); }
-    int size() const { return q.size(); }
-    int lostCustomers() const { return lost; }
+    bool empty() const { return q_.empty(); }
+    int  size()  const { return static_cast<int>(q_.size()); }
+    int  lostCustomers() const { return lost_; }
+    int  demand() const { return demandPerHour_; }
 
-    std::string get() {
-        if(q.empty()) return "";
-        auto c = q.front();
-        q.pop_front();
-        return c.service;
-    }
+    std::string pop();
+    void failOne();
 
-    void fail() { lost++; }
-    void increaseDemand() { if(demandPerHour < 15) demandPerHour++; }
-    void decreaseDemand() { if(demandPerHour > 1) demandPerHour--; }
+    void increaseDemand();
+    void decreaseDemand();
 
-    int currentDemand() const { return demandPerHour; }
-    void resetLost() { lost = 0; }
+    void print(std::ostream &os) const;
+    friend std::ostream& operator<<(std::ostream&, const CarQueue&);
 };

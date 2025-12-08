@@ -1,10 +1,9 @@
 #pragma once
-
 #include "WashService.h"
 
 class EcoService : public WashService {
 protected:
-    void print(std::ostream& os) const override;
+    void print(std::ostream &os) const override;
 
 public:
     EcoService(std::string name, int durationMin, double basePrice,
@@ -13,6 +12,6 @@ public:
                       waterL, shampooMl, waxMl) {}
 
     double finalPriceForCars(int cars) const override;
-
+    double rating() const override { return 4.3; }
     std::unique_ptr<WashService> clone() const override;
 };

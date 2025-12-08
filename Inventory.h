@@ -1,5 +1,4 @@
 #pragma once
-
 #include <iosfwd>
 
 class WashService;
@@ -13,8 +12,7 @@ public:
     Inventory(int w = 0, int s = 0, int x = 0);
 
     void add(int w, int s, int x);
-
-    bool takeIfCan(const WashService& sp, int cars);
+    bool takeIfCan(const WashService &sp, int cars);
 
     int w() const noexcept { return wL_; }
     int s() const noexcept { return sML_; }
@@ -22,5 +20,5 @@ public:
 
     double fullness() const;
 
-    friend std::ostream& operator<<(std::ostream& os, const Inventory& inv);
+    friend std::ostream& operator<<(std::ostream&, const Inventory&);
 };

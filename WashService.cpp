@@ -1,5 +1,4 @@
 #include "WashService.h"
-
 #include <iomanip>
 #include <ostream>
 
@@ -20,9 +19,10 @@ bool WashService::applyFactor(double f) {
 
 std::ostream& operator<<(std::ostream& os, const WashService& s) {
     os << "Service{name='" << s.name_ << "', t=" << s.durationMin_
-       << "min, basePrice=" << std::fixed << std::setprecision(2) << s.basePrice_
-       << " EUR, use=[" << s.waterL_ << "L, " << s.shampooMl_
-       << "ml, " << s.waxMl_ << "ml]}";
-    s.print(os); // apel virtual
+       << "min, basePrice=" << std::fixed << std::setprecision(2)
+       << s.basePrice_ << " EUR, use=[" << s.waterL_ << "L, "
+       << s.shampooMl_ << "ml, " << s.waxMl_ << "ml]}";
+    s.print(os);
+    os << " rating=" << std::setprecision(1) << s.rating();
     return os;
 }

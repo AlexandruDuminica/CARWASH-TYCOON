@@ -1,9 +1,7 @@
 #include "BasicService.h"
-
 #include <ostream>
 
-void BasicService::print(std::ostream& os) const {
-    // nu afișăm nimic suplimentar pentru Basic
+void BasicService::print(std::ostream &os) const {
     (void)os;
 }
 
