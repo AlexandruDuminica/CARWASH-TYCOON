@@ -12,8 +12,7 @@
 
 int main() {
 #ifdef GITHUB_ACTIONS
-    // Mod simplificat pentru rularea cu MemorySanitizer în GitHub Actions:
-    // nu construim jocul complet, doar un mesaj scurt și ieșim cu succes.
+
     std::cout << "CARWASH TYCOON MSan smoke test\n";
     return 0;
 #else
@@ -21,13 +20,13 @@ int main() {
         const int OPEN  = 8 * 60;
         const int CLOSE = 12 * 60;
 
-        // Inventar initial
+
         Inventory inv(3000, 2000, 1500);
 
-        // Jocul principal
+
         CarWash game("CarWash TYCOON", inv, OPEN, CLOSE);
 
-        // Servicii disponibile
+
         BasicService  s1("Basic",   20,  8.0,  80, 40,  0);
         DeluxeService s2("Deluxe",  35, 14.5, 120, 60,  0);
         WaxService    s3("Wax",     25, 16.0,  60, 20, 50);
@@ -38,7 +37,7 @@ int main() {
         game.addService(s3);
         game.addService(s4);
 
-        // Bai de spalare
+
         WashBay b1(1, OPEN,      "B1");
         WashBay b2(2, OPEN + 10, "B2");
         WashBay b3(3, OPEN + 5,  "B3");
@@ -47,7 +46,7 @@ int main() {
         game.addBay(b2);
         game.addBay(b3);
 
-        // Pornim simularea interactiva
+
         game.run();
     } catch (const CarWashException& ex) {
         std::cerr << "Eroare CarWash: " << ex.what() << "\n";
