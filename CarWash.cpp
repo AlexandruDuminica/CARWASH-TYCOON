@@ -56,26 +56,6 @@ int CarWash::findService(const std::string& name) const {
     return -1;
 }
 
-bool CarWash::addService(const WashService& s) {
-    if (services_.size() >= MAX_SERV) return false;
-    services_.push_back(s.clone());
-    return true;
-}
-
-bool CarWash::addBay(const WashBay& b) {
-    if (bays_.size() >= MAX_BAYS) return false;
-    bays_.push_back(std::make_unique<WashBay>(b));
-
-    // folosim addDeluxe / addWax pentru a evita "unusedFunction" si a da varietate
-    if (bays_.back()->id() % 2 == 0) {
-        bays_.back()->addWax();
-    } else {
-        bays_.back()->addDeluxe();
-    }
-
-    return true;
-}
-
 int CarWash::bookCars(const std::string& serviceName, int cars) {
     int si = findService(serviceName);
     if (si < 0) {
@@ -149,7 +129,6 @@ void CarWash::endCurrentDay() {
     }
     nowMin_ = openMin_;
 
-    // actualizeaza obiectivele la sfarsit de zi
     goals_.checkAll(*this);
 
     events_.startNewDay(*this);
@@ -184,7 +163,6 @@ void CarWash::simulateHour() {
         auto customer = queue_.pop();
         if (!customer) break;
 
-        // folosim budget() si impatience() pentru a evita "unusedFunction"
         double b = customer->budget();
         double imp = customer->impatience();
         (void)b;
@@ -289,8 +267,6 @@ void CarWash::showStatus() const {
 
 void CarWash::showGoals() const {
     goals_.print(std::cout, *this);
-
-    // folosim allAchieved() pentru a evita "unusedFunction" si pentru feedback
     if (goals_.allAchieved()) {
         std::cout << "Toate obiectivele au fost atinse!\n";
     }
@@ -377,110 +353,4 @@ void CarWash::buyUpgrade(int id) {
 
 void CarWash::logEvent(const std::string& msg) const {
     std::cout << "[LOG] " << msg << "\n";
-}
-
-void CarWash::run() {
-    std::cout << "=== CARWASH TYCOON ===\n";
-    showHelp();
-    showDashboard();
-
-#ifdef GITHUB_ACTIONS
-    // Mod de rulare pentru CI: exercitam API-urile principale o singură dată,
-    // fără buclă de input, ca să evităm problemele de stack și unusedFunction.
-    try {
-        // Stare detaliată
-        showStatus();
-        showServices();
-        showBays();
-        showGoals();
-        showUpgrades();
-        showReports();
-
-        // Strategia de prețuri și o oră de simulare
-        setPricingMode("balanced");
-        nextCommand();      // simulează o oră și afișează dashboard
-
-        // Încercăm un upgrade (dacă nu sunt bani, excepția e ignorată aici)
-        try {
-            buyUpgrade(1);
-        } catch (const CarWashException&) {
-            // ignorăm, ne interesează doar să fie folosită funcția
-        }
-
-        showDashboard();
-    } catch (const CarWashException& ex) {
-        std::cout << "Eroare: " << ex.what() << "\n";
-    }
-
-    std::cout << "=== FINAL (CI) ===\n";
-#else
-    // Mod interactiv normal
-    std::string line;
-    while (true) {
-        std::cout << "> ";
-        if (!std::getline(std::cin, line)) {
-            break;
-        }
-
-        try {
-            std::istringstream iss(line);
-            std::string cmd;
-            iss >> cmd;
-
-            if (cmd == "help") {
-                showHelp();
-            } else if (cmd == "status") {
-                showStatus();
-            } else if (cmd == "services") {
-                showServices();
-            } else if (cmd == "bays") {
-                showBays();
-            } else if (cmd == "queue") {
-                showQueue();
-            } else if (cmd == "next") {
-                nextCommand();
-            } else if (cmd == "endday") {
-                endCurrentDay();
-                showDashboard();
-            } else if (cmd == "dashboard") {
-                showDashboard();
-            } else if (cmd == "goals") {
-                showGoals();
-            } else if (cmd == "upgrades") {
-                showUpgrades();
-            } else if (cmd == "buyupgrade") {
-                int id = 0;
-                iss >> id;
-                if (id <= 0) {
-                    throw InvalidCommandException("Folosire: buyupgrade <id>");
-                }
-                buyUpgrade(id);
-                showDashboard();
-            } else if (cmd == "setpricing") {
-                std::string mode;
-                iss >> mode;
-                if (mode.empty()) {
-                    throw InvalidCommandException(
-                        "Folosire: setpricing <aggressive|balanced|conservative>");
-                }
-                setPricingMode(mode);
-            } else if (cmd == "reports") {
-                showReports();
-            } else if (cmd == "events") {
-                events_.print(std::cout);
-            } else if (cmd == "endrun") {
-                break;
-            } else if (cmd.empty()) {
-                continue;
-            } else {
-                throw InvalidCommandException("Comanda necunoscuta: " + cmd);
-            }
-        } catch (const CarWashException& ex) {
-            std::cout << "Eroare: " << ex.what() << "\n";
-        }
-    }
-
-    std::cout << "=== FINAL ===\n";
-    showDashboard();
-#endif
 }
