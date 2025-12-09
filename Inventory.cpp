@@ -1,53 +1,39 @@
 #include "Inventory.h"
 #include "WashService.h"
-
-#include <iomanip>
 #include <ostream>
 
 Inventory::Inventory(int w, int s, int x)
-    : wL_(w), sML_(s), xML_(x) {}
-
-void Inventory::add(int w, int s, int x) {
-    if (w > 0)  wL_  += w;
-    if (s > 0)  sML_ += s;
-    if (x > 0)  xML_ += x;
-}
+    : waterML_(w), shampooML_(s), waxML_(x) {}
 
 bool Inventory::takeIfCan(const WashService& sp, int cars) {
-    if (cars <= 0) {
-        return true;
-    }
+    // consum de apă per mașină (constant, simplu)
+    const int needWater   = 10 * cars;
+    // consum de șampon/ceară definit în WashService
+    const int needShampoo = sp.needS() * cars;
+    const int needWax     = sp.needX() * cars;
 
-    // folosim direct nevoile declarate in WashService
-    long needW = 1L * sp.needW() * cars;
-    long needS = 1L * sp.needS() * cars;
-    long needX = 1L * sp.needX() * cars;
+    if (waterML_   < needWater ||
+        shampooML_ < needShampoo ||
+        waxML_     < needWax) {
+        return false;
+        }
 
-    if (needW <= wL_ && needS <= sML_ && needX <= xML_) {
-        wL_  -= static_cast<int>(needW);
-        sML_ -= static_cast<int>(needS);
-        xML_ -= static_cast<int>(needX);
-        return true;
-    }
-    return false;
+    waterML_   -= needWater;
+    shampooML_ -= needShampoo;
+    waxML_     -= needWax;
+    return true;
 }
 
-double Inventory::fullness() const {
-    const double kW = 5000.0;
-    const double kS = 5000.0;
-    const double kX = 5000.0;
-
-    double fw = wL_  / kW;
-    double fs = sML_ / kS;
-    double fx = xML_ / kX;
-
-    return (fw + fs + fx) / 3.0 * 100.0;
+void Inventory::addSupplies(int waterML, int shampooML, int waxML) {
+    if (waterML   > 0) waterML_   += waterML;
+    if (shampooML > 0) shampooML_ += shampooML;
+    if (waxML     > 0) waxML_     += waxML;
 }
 
 std::ostream& operator<<(std::ostream& os, const Inventory& inv) {
-    os << "Inventory{water=" << inv.w() << "L, shampoo=" << inv.s()
-       << "ml, wax=" << inv.x() << "ml, full="
-       << std::fixed << std::setprecision(1)
-       << inv.fullness() << "%}";
+    os << "Inventory{water="   << inv.waterML_
+       << ", shampoo="         << inv.shampooML_
+       << ", wax="             << inv.waxML_
+       << "}";
     return os;
 }

@@ -3,9 +3,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <sstream>
-#include <limits>
 
 #include "Inventory.h"
 #include "WashBay.h"
@@ -90,11 +87,18 @@ public:
 
     void buyUpgrade(int id);
 
+    // nou: cumpărare produse curățare
+    void buySupplies(const std::string& type, int amount);
+
+    // hooks pentru Upgrade-uri si Event-uri
     void increaseSpeedFactor(double delta)   { speedFactor_     += delta; }
     void increaseComfortBonus(double delta)  { comfortBonus_    += delta; }
     void increaseBaseDemand(int delta)       { baseDemandBonus_ += delta; }
 
-    void adjustCash(double delta) { cash_ += delta; if (cash_ < 0.0) cash_ = 0.0; }
+    void adjustCash(double delta) {
+        cash_ += delta;
+        if (cash_ < 0.0) cash_ = 0.0;
+    }
     void adjustServicePrices(double factor);
 
     double totalCash() const noexcept { return cash_; }
@@ -112,122 +116,3 @@ public:
 
     void run();
 };
-
-// cppcheck-suppress unusedFunction
-inline bool CarWash::addService(const WashService& s) {
-    if (services_.size() >= MAX_SERV) return false;
-    services_.push_back(s.clone());
-    return true;
-}
-
-// cppcheck-suppress unusedFunction
-inline bool CarWash::addBay(const WashBay& b) {
-    if (bays_.size() >= MAX_BAYS) return false;
-    bays_.push_back(std::make_unique<WashBay>(b));
-    if (bays_.back()->id() % 2 == 0) {
-        bays_.back()->addWax();
-    } else {
-        bays_.back()->addDeluxe();
-    }
-    return true;
-}
-
-// cppcheck-suppress unusedFunction
-inline void CarWash::run() {
-    std::cout << "=== CARWASH TYCOON ===\n";
-    showHelp();
-    showDashboard();
-
-#ifdef GITHUB_ACTIONS
-    try {
-        showStatus();
-        showServices();
-        showBays();
-        showGoals();
-        showUpgrades();
-        showReports();
-
-        setPricingMode("balanced");
-        nextCommand();
-
-        try {
-            buyUpgrade(1);
-        } catch (const CarWashException&) {
-        }
-
-        showDashboard();
-    } catch (const CarWashException& ex) {
-        std::cout << "Eroare: " << ex.what() << "\n";
-    }
-
-    std::cout << "=== FINAL (CI) ===\n";
-#else
-    std::string line;
-    while (true) {
-        std::cout << "> ";
-        if (!std::getline(std::cin, line)) {
-            break;
-        }
-
-        try {
-            std::istringstream iss(line);
-            std::string cmd;
-            iss >> cmd;
-
-            if (cmd == "help") {
-                showHelp();
-            } else if (cmd == "status") {
-                showStatus();
-            } else if (cmd == "services") {
-                showServices();
-            } else if (cmd == "bays") {
-                showBays();
-            } else if (cmd == "queue") {
-                showQueue();
-            } else if (cmd == "next") {
-                nextCommand();
-            } else if (cmd == "endday") {
-                endCurrentDay();
-                showDashboard();
-            } else if (cmd == "dashboard") {
-                showDashboard();
-            } else if (cmd == "goals") {
-                showGoals();
-            } else if (cmd == "upgrades") {
-                showUpgrades();
-            } else if (cmd == "buyupgrade") {
-                int id = 0;
-                iss >> id;
-                if (id <= 0) {
-                    throw InvalidCommandException("Folosire: buyupgrade <id>");
-                }
-                buyUpgrade(id);
-                showDashboard();
-            } else if (cmd == "setpricing") {
-                std::string mode;
-                iss >> mode;
-                if (mode.empty()) {
-                    throw InvalidCommandException(
-                        "Folosire: setpricing <aggressive|balanced|conservative>");
-                }
-                setPricingMode(mode);
-            } else if (cmd == "reports") {
-                showReports();
-            } else if (cmd == "events") {
-                events_.print(std::cout);
-            } else if (cmd == "endrun") {
-                break;
-            } else if (cmd.empty()) {
-                continue;
-            } else {
-                throw InvalidCommandException("Comanda necunoscuta: " + cmd);
-            }
-        } catch (const CarWashException& ex) {
-            std::cout << "Eroare: " << ex.what() << "\n";
-        }
-    }
-
-    std::cout << "=== FINAL ===\n";
-    showDashboard();
-#endif
-}
