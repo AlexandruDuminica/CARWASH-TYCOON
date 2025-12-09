@@ -113,14 +113,14 @@ public:
     void run();
 };
 
-// implementări inline pentru a evita "unusedFunction" în CarWash.cpp
-
+// cppcheck-suppress unusedFunction
 inline bool CarWash::addService(const WashService& s) {
     if (services_.size() >= MAX_SERV) return false;
     services_.push_back(s.clone());
     return true;
 }
 
+// cppcheck-suppress unusedFunction
 inline bool CarWash::addBay(const WashBay& b) {
     if (bays_.size() >= MAX_BAYS) return false;
     bays_.push_back(std::make_unique<WashBay>(b));
@@ -132,6 +132,7 @@ inline bool CarWash::addBay(const WashBay& b) {
     return true;
 }
 
+// cppcheck-suppress unusedFunction
 inline void CarWash::run() {
     std::cout << "=== CARWASH TYCOON ===\n";
     showHelp();
