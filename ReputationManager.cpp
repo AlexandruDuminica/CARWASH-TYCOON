@@ -1,16 +1,21 @@
 #include "ReputationManager.h"
+
+#include "MathUtils.h"
+
 #include <algorithm>
 
 void ReputationManager::onServed(double satisfaction) {
-    double sat = std::max(0.0, std::min(5.0, satisfaction));
-    // medie mobila simpla
+    double sat = clampValue<double>(satisfaction, 0.0, 5.0);
+    satisfaction_.add(sat);
+    servedCount_.add(1);
+
+    events_++;
     score_ = 0.8 * score_ + 0.2 * sat;
-    ++events_;
+    score_ = clampValue<double>(score_, 0.0, 5.0);
 }
 
 void ReputationManager::onLost() {
-    // pierderea clientului scade reputatia
-    score_ -= 0.2;
-    if (score_ < 0.0) score_ = 0.0;
-    ++events_;
+    events_++;
+    score_ -= 0.10;
+    score_ = clampValue<double>(score_, 0.0, 5.0);
 }

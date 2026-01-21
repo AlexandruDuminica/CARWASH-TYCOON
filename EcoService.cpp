@@ -1,33 +1,23 @@
 #include "EcoService.h"
-#include <ostream>
-
-EcoService::EcoService(std::string name,
-                       int duration,
-                       double price,
-                       int waterNeed,
-                       int shampooNeed,
-                       int waxNeed)
-    : WashService(std::move(name),
-                  duration,
-                  price,
-                  waterNeed,
-                  shampooNeed,
-                  waxNeed,
-                  3.80) {}
 
 EcoService::EcoService()
-    : EcoService("Eco", 30, 12.0, 50, 30, 0) {}
+    : WashService("Eco", 30, 12.0, 50, 30, 0, 3.9) {}
 
-void EcoService::print(std::ostream& os) const {
-    os << "[ECO] ";
-    WashService::print(os);
+EcoService::EcoService(std::string name, int durationMin, double price,
+                       int waterNeed, int shampooNeed, int waxNeed,
+                       double rating)
+    : WashService(std::move(name), durationMin, price, waterNeed, shampooNeed, waxNeed, rating) {}
+
+void EcoService::print(std::ostream &os) const {
+    os << "EcoService(" << name_ << ", " << duration_ << " min, "
+       << price_ << " EUR, rating=" << rating_ << ")";
 }
 
 double EcoService::finalPriceForCars(int cars) const {
     if (cars <= 0) return 0.0;
-    double total = WashService::finalPriceForCars(cars);
-    if (cars >= 4) total *= 0.96;
-    return total;
+    double base = price_ * cars;
+    if (water_ <= 60) base *= 0.98;
+    return base;
 }
 
 std::unique_ptr<WashService> EcoService::clone() const {

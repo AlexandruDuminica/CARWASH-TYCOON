@@ -1,33 +1,21 @@
 #include "BasicService.h"
-#include <ostream>
-
-BasicService::BasicService(std::string name,
-                           int duration,
-                           double price,
-                           int waterNeed,
-                           int shampooNeed,
-                           int waxNeed)
-    : WashService(std::move(name),
-                  duration,
-                  price,
-                  waterNeed,
-                  shampooNeed,
-                  waxNeed,
-                  3.20) {}
 
 BasicService::BasicService()
-    : BasicService("Basic", 20, 8.0, 80, 40, 0) {}
+    : WashService("Basic", 20, 8.0, 80, 40, 0, 3.6) {}
 
-void BasicService::print(std::ostream& os) const {
-    os << "[BASIC] ";
-    WashService::print(os);
+BasicService::BasicService(std::string name, int durationMin, double price,
+                           int waterNeed, int shampooNeed, int waxNeed,
+                           double rating)
+    : WashService(std::move(name), durationMin, price, waterNeed, shampooNeed, waxNeed, rating) {}
+
+void BasicService::print(std::ostream &os) const {
+    os << "BasicService(" << name_ << ", " << duration_ << " min, "
+       << price_ << " EUR, rating=" << rating_ << ")";
 }
 
 double BasicService::finalPriceForCars(int cars) const {
     if (cars <= 0) return 0.0;
-    double total = WashService::finalPriceForCars(cars);
-    if (cars >= 5) total *= 0.95;
-    return total;
+    return price_ * cars;
 }
 
 std::unique_ptr<WashService> BasicService::clone() const {
