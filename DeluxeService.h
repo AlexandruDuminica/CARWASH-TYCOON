@@ -1,17 +1,18 @@
 #pragma once
 #include "WashService.h"
 
-class DeluxeService : public WashService {
-protected:
-    void print(std::ostream &os) const override;
-
+class DeluxeService final : public WashService {
 public:
-    DeluxeService(std::string name, int durationMin, double basePrice,
-                  int waterL, int shampooMl, int waxMl)
-        : WashService(std::move(name), durationMin, basePrice,
-                      waterL, shampooMl, waxMl) {}
+    DeluxeService(std::string name,
+                  int duration,
+                  double price,
+                  int waterNeed,
+                  int shampooNeed,
+                  int waxNeed);
 
+    DeluxeService();
+
+    void print(std::ostream& os) const override;
     double finalPriceForCars(int cars) const override;
-    double rating() const override { return 4.8; }
     std::unique_ptr<WashService> clone() const override;
 };

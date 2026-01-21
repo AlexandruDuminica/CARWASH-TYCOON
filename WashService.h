@@ -1,38 +1,51 @@
 #pragma once
-#include <string>
 #include <iosfwd>
 #include <memory>
+#include <string>
 
 class WashService {
 protected:
     std::string name_;
-    int durationMin_{};
-    double basePrice_{};
-    int waterL_{};
-    int shampooMl_{};
-    int waxMl_{};
+    int duration_{0};
+    double price_{0.0};
 
-    virtual void print(std::ostream &os) const = 0;
+    int waterNeed_{0};
+    int shampooNeed_{0};
+    int waxNeed_{0};
+
+    double rating_{0.0};
 
 public:
-    WashService(std::string name, int durationMin, double basePrice,
-                int waterL, int shampooMl, int waxMl);
+    WashService(std::string name,
+                int duration,
+                double price,
+                int waterNeed,
+                int shampooNeed,
+                int waxNeed,
+                double rating);
 
     virtual ~WashService() = default;
 
-    const std::string& name()   const noexcept { return name_; }
-    int duration()              const noexcept { return durationMin_; }
-    double price()              const noexcept { return basePrice_; }
-    int needW()                 const noexcept { return waterL_; }
-    int needS()                 const noexcept { return shampooMl_; }
-    int needX()                 const noexcept { return waxMl_; }
+    const std::string& name() const noexcept { return name_; }
+    int duration() const noexcept { return duration_; }
+    double price() const noexcept { return price_; }
 
-    bool applyFactor(double f);
+    int waterNeed() const noexcept { return waterNeed_; }
+    int shampooNeed() const noexcept { return shampooNeed_; }
+    int waxNeed() const noexcept { return waxNeed_; }
 
-    virtual double finalPriceForCars(int cars) const = 0;
-    virtual double rating() const { return 4.0; }
+    int needW() const noexcept { return waterNeed_; }
+    int needS() const noexcept { return shampooNeed_; }
+    int needX() const noexcept { return waxNeed_; }
+
+    double rating() const noexcept { return rating_; }
+
+    virtual void applyFactor(double factor);
+
+    virtual void print(std::ostream& os) const;
+    virtual double finalPriceForCars(int cars) const;
 
     virtual std::unique_ptr<WashService> clone() const = 0;
 
-    friend std::ostream& operator<<(std::ostream&, const WashService&);
+    friend std::ostream& operator<<(std::ostream& os, const WashService& s);
 };

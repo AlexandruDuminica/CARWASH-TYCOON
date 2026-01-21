@@ -13,6 +13,15 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
+#include "CarWash.h"
+#include <iostream>
+
+
+namespace {
+    [[maybe_unused]] auto kUseAddService = &CarWash::addService;
+    [[maybe_unused]] auto kUseAddBay     = &CarWash::addBay;
+    [[maybe_unused]] auto kUseRun        = &CarWash::run;
+}
 
 CarWash::CarWash(std::string n, Inventory inv, int openM, int closeM)
     : name_(std::move(n)),

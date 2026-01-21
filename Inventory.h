@@ -1,28 +1,25 @@
 #pragma once
 
 #include <iosfwd>
-
-// Forward declaration: nu avem nevoie de detaliile clasei aici
-class WashService;
+#include "WashService.h"
 
 class Inventory {
-    int wL_;   // apa (L)
-    int sML_;  // sampon (ml)
-    int xML_;  // ceara (ml)
+    int water_{0};
+    int shampoo_{0};
+    int wax_{0};
 
 public:
-    explicit Inventory(int w = 0, int s = 0, int x = 0);
+    explicit Inventory(int w = 0, int s = 0, int x = 0) : water_(w), shampoo_(s), wax_(x) {}
 
-    void add(int w, int s, int x);
+    int water() const noexcept { return water_; }
+    int shampoo() const noexcept { return shampoo_; }
+    int wax() const noexcept { return wax_; }
 
-    // Consuma resursele necesare pentru 'cars' masini ale serviciului dat
+    void addWater(int v) noexcept { if (v > 0) water_ += v; }
+    void addShampoo(int v) noexcept { if (v > 0) shampoo_ += v; }
+    void addWax(int v) noexcept { if (v > 0) wax_ += v; }
+
     bool takeIfCan(const WashService& sp, int cars);
 
-    int w() const noexcept { return wL_; }
-    int s() const noexcept { return sML_; }
-    int x() const noexcept { return xML_; }
-
-    double fullness() const;
+    friend std::ostream& operator<<(std::ostream& os, const Inventory& inv);
 };
-
-std::ostream& operator<<(std::ostream& os, const Inventory& inv);
