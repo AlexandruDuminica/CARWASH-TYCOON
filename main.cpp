@@ -58,8 +58,8 @@ int main() {
     }
 #else
     try {
-        const int OPEN  = 8 * 60;
-        const int CLOSE = 12 * 60;
+        constexpr int OPEN  = 8 * 60;
+        constexpr int CLOSE = 12 * 60;
 
         Inventory inv(3000, 2000, 1500);
         CarWash game("CarWash TYCOON", inv, OPEN, CLOSE);

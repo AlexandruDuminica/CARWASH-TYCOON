@@ -60,8 +60,8 @@ class CarWash {
     static constexpr int MAX_SERV = 20;
     static constexpr int MAX_BAYS = 20;
 
-    bool sameCaseInsensitive(const std::string& a,const std::string& b) const;
-    int  findService(const std::string& name) const;
+    [[nodiscard]] bool sameCaseInsensitive(const std::string& a,const std::string& b) const;
+    [[nodiscard]] int  findService(const std::string& name) const;
 
     void endCurrentDay();
     void applyPricingStrategy();
@@ -69,8 +69,8 @@ class CarWash {
 
 public:
     CarWash(std::string n, Inventory inv, int openM, int closeM);
-    double avgSatisfactionToday() const noexcept { return reputation_.avgSatisfaction(); }
-    int servedSamplesToday() const noexcept { return reputation_.totalServedSamples(); }
+    [[nodiscard]] double avgSatisfactionToday() const noexcept { return reputation_.avgSatisfaction(); }
+    [[nodiscard]] int servedSamplesToday() const noexcept { return reputation_.totalServedSamples(); }
 
     bool addService(const WashService& s);
     bool addBay(const WashBay& b);
@@ -99,16 +99,16 @@ public:
     void adjustCash(double delta) { cash_ += delta; if (cash_ < 0.0) cash_ = 0.0; }
     void adjustServicePrices(double factor);
 
-    double totalCash() const noexcept { return cash_; }
-    int totalCarsServed() const noexcept { return totalCarsServed_; }
-    double averageSatisfaction() const noexcept {
+    [[nodiscard]] double totalCash() const noexcept { return cash_; }
+    [[nodiscard]] int totalCarsServed() const noexcept { return totalCarsServed_; }
+    [[nodiscard]] double averageSatisfaction() const noexcept {
         return totalSatisfiedCustomers_ > 0
                ? totalSatisfaction_ / totalSatisfiedCustomers_
                : 0.0;
     }
 
-    double reputationScore() const noexcept { return reputation_.score(); }
-    int currentDemand() const noexcept { return queue_.demand(); }
+    [[nodiscard]] double reputationScore() const noexcept { return reputation_.score(); }
+    [[nodiscard]] int currentDemand() const noexcept { return queue_.demand(); }
 
     void logEvent(const std::string& msg) const;
 
