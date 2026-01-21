@@ -1,5 +1,7 @@
 #include "EcoService.h"
 
+#include <ostream>
+
 EcoService::EcoService()
     : WashService("Eco", 30, 12.0, 50, 30, 0, 3.9) {}
 
@@ -8,7 +10,7 @@ EcoService::EcoService(std::string name, int durationMin, double price,
                        double rating)
     : WashService(std::move(name), durationMin, price, waterNeed, shampooNeed, waxNeed, rating) {}
 
-void EcoService::print(std::ostream &os) const {
+void EcoService::print(std::ostream& os) const {
     os << "EcoService(" << name_ << ", " << duration_ << " min, "
        << price_ << " EUR, rating=" << rating_ << ")";
 }

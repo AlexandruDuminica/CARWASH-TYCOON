@@ -1,5 +1,7 @@
 #include "WaxService.h"
 
+#include <ostream>
+
 WaxService::WaxService()
     : WashService("Wax", 25, 16.0, 60, 20, 50, 4.5) {}
 
@@ -8,7 +10,7 @@ WaxService::WaxService(std::string name, int durationMin, double price,
                        double rating)
     : WashService(std::move(name), durationMin, price, waterNeed, shampooNeed, waxNeed, rating) {}
 
-void WaxService::print(std::ostream &os) const {
+void WaxService::print(std::ostream& os) const {
     os << "WaxService(" << name_ << ", " << duration_ << " min, "
        << price_ << " EUR, rating=" << rating_ << ")";
 }

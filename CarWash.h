@@ -69,6 +69,8 @@ class CarWash {
 
 public:
     CarWash(std::string n, Inventory inv, int openM, int closeM);
+    double avgSatisfactionToday() const noexcept { return reputation_.avgSatisfaction(); }
+    int servedSamplesToday() const noexcept { return reputation_.totalServedSamples(); }
 
     bool addService(const WashService& s);
     bool addBay(const WashBay& b);

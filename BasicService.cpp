@@ -1,5 +1,7 @@
 #include "BasicService.h"
 
+#include <ostream>
+
 BasicService::BasicService()
     : WashService("Basic", 20, 8.0, 80, 40, 0, 3.6) {}
 
@@ -8,7 +10,7 @@ BasicService::BasicService(std::string name, int durationMin, double price,
                            double rating)
     : WashService(std::move(name), durationMin, price, waterNeed, shampooNeed, waxNeed, rating) {}
 
-void BasicService::print(std::ostream &os) const {
+void BasicService::print(std::ostream& os) const {
     os << "BasicService(" << name_ << ", " << duration_ << " min, "
        << price_ << " EUR, rating=" << rating_ << ")";
 }

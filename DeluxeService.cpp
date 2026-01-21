@@ -1,5 +1,7 @@
 #include "DeluxeService.h"
 
+#include <ostream>
+
 DeluxeService::DeluxeService()
     : WashService("Deluxe", 35, 14.5, 120, 60, 0, 4.2) {}
 
@@ -8,7 +10,7 @@ DeluxeService::DeluxeService(std::string name, int durationMin, double price,
                              double rating)
     : WashService(std::move(name), durationMin, price, waterNeed, shampooNeed, waxNeed, rating) {}
 
-void DeluxeService::print(std::ostream &os) const {
+void DeluxeService::print(std::ostream& os) const {
     os << "DeluxeService(" << name_ << ", " << duration_ << " min, "
        << price_ << " EUR, rating=" << rating_ << ")";
 }
