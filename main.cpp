@@ -6,7 +6,7 @@
 #include "Inventory.h"
 #include "ServiceFactory.h"
 #include "WashBay.h"
-#include "BasicService.h"   // pentru finalPriceForCars in CI
+#include "BasicService.h"
 
 int main() {
 #ifdef GITHUB_ACTIONS
@@ -16,25 +16,25 @@ int main() {
 
         Inventory inv(3000, 2000, 1500);
 
-        // folosim getters + adders ca să nu fie unusedFunction
         const int w0 = inv.water();
         const int s0 = inv.shampoo();
         const int x0 = inv.wax();
         (void)w0; (void)s0; (void)x0;
+
         inv.addWater(1);
         inv.addShampoo(1);
 
         CarWash game("CarWash TYCOON", inv, OPEN, CLOSE);
 
-        // folosim ambele funcții din Factory
         auto def = ServiceFactory::create("basic");
-        auto s1 = ServiceFactory::createConfigured(
-            ServiceFactory::Kind::Basic,  "Basic",  20,  8.0,  80, 40,  0);
+        auto s1  = ServiceFactory::createConfigured(
+            ServiceFactory::Kind::Basic, "Basic", 20, 8.0, 80, 40, 0);
 
-        if (!def || !s1) throw CarWashException("ServiceFactory returned nullptr");
+        if (!def || !s1) {
+            throw CarWashException("ServiceFactory returned nullptr");
+        }
 
-        // folosim finalPriceForCars ca să nu fie unusedFunction
-        if (auto* bs = dynamic_cast<BasicService*>(s1.get())) {
+        if (const auto* bs = dynamic_cast<const BasicService*>(s1.get())) {
             const double tmp = bs->finalPriceForCars(2);
             (void)tmp;
         }
@@ -45,21 +45,20 @@ int main() {
         WashBay b1(1, OPEN, "B1");
         game.addBay(b1);
 
-        // nu rulăm loop-ul, doar smoke-check
+        const double a = game.avgSatisfactionToday();
+        const int n = game.servedSamplesToday();
+        (void)a; (void)n;
+
         std::cout << "CARWASH TYCOON CI smoke test OK\n";
         return 0;
     } catch (const std::exception& ex) {
         std::cerr << "CI error: " << ex.what() << "\n";
         return 1;
-        const double a = game.avgSatisfactionToday();
-        const int n = game.servedSamplesToday();
-        (void)a; (void)n;
-
     }
 #else
     try {
-        constexpr int OPEN  = 8 * 60;
-        constexpr int CLOSE = 12 * 60;
+        const int OPEN  = 8 * 60;
+        const int CLOSE = 12 * 60;
 
         Inventory inv(3000, 2000, 1500);
         CarWash game("CarWash TYCOON", inv, OPEN, CLOSE);
