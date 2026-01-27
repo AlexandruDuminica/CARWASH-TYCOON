@@ -1,33 +1,47 @@
 #include "WashService.h"
 
 #include <ostream>
+#include <utility>
 
-WashService::WashService(std::string name, int duration, double price,
-                         int water, int shampoo, int wax,
-                         double rating)
+WashService::WashService(std::string name, int durationMin, double price,
+                         int waterNeed, int shampooNeed, int waxNeed, double rating,
+                         ServiceKind kind)
     : name_(std::move(name)),
-      duration_(duration),
+      duration_(durationMin),
       price_(price),
-      water_(water),
-      shampoo_(shampoo),
-      wax_(wax),
-      rating_(rating) {}
+      needW_(waterNeed),
+      needS_(shampooNeed),
+      needX_(waxNeed),
+      rating_(rating),
+      kind_(kind) {
+}
 
-const std::string& WashService::name() const noexcept { return name_; }
-int WashService::duration() const noexcept { return duration_; }
-double WashService::price() const noexcept { return price_; }
+void WashService::applyFactor(double factor) {
+    if (factor <= 0.0) return;
+    price_ *= factor;
+}
 
-int WashService::waterNeed() const noexcept { return water_; }
-int WashService::shampooNeed() const noexcept { return shampoo_; }
-int WashService::waxNeed() const noexcept { return wax_; }
+std::string WashService::kindToString(ServiceKind k) {
+    switch (k) {
+        case ServiceKind::Basic: return "Basic";
+        case ServiceKind::Deluxe: return "Deluxe";
+        case ServiceKind::Wax: return "Wax";
+        case ServiceKind::Eco: return "Eco";
+        case ServiceKind::Custom: return "Custom";
+    }
+    return "Custom";
+}
 
-double WashService::rating() const noexcept { return rating_; }
+void WashService::print(std::ostream &os) const {
+    os << kindToString(kind_) << "("
+            << name_ << ", " << duration_ << " min, "
+            << price_ << ", W=" << needW_
+            << ", S=" << needS_
+            << ", X=" << needX_
+            << ", rating=" << rating_ << ")";
+}
 
-std::ostream& operator<<(std::ostream& os, const WashService& s) {
-    os << s.name() << " | dur=" << s.duration() << " min"
-       << " | price=" << s.price()
-       << " | needs(W=" << s.needW()
-       << ", S=" << s.needS()
-       << ", X=" << s.needX() << ")";
+std::ostream &operator<<(std::ostream &os, const WashService &s) {
+    s.print(os);
     return os;
 }

@@ -9,7 +9,7 @@ void EventManager::clear() {
     todays_.clear();
 }
 
-void EventManager::generateForNewDay(const CarWash& wash) {
+void EventManager::generateForNewDay(const CarWash &wash) {
     if (todays_.empty()) {
         static bool seeded = false;
         if (!seeded) {
@@ -38,25 +38,25 @@ void EventManager::generateForNewDay(const CarWash& wash) {
     }
 }
 
-void EventManager::applyAll(CarWash& wash) {
-    for (auto& e : todays_) {
+void EventManager::applyAll(CarWash &wash) {
+    for (auto &e: todays_) {
         if (e) e->apply(wash);
     }
 }
 
-void EventManager::startNewDay(CarWash& wash) {
+void EventManager::startNewDay(CarWash &wash) {
     clear();
     generateForNewDay(wash);
     applyAll(wash);
 }
 
-void EventManager::print(std::ostream& os) const {
+void EventManager::print(std::ostream &os) const {
     if (todays_.empty()) {
         os << "Evenimente azi: (nimic special)\n";
         return;
     }
     os << "Evenimente azi:\n";
-    for (const auto& e : todays_) {
+    for (const auto &e: todays_) {
         if (e) {
             os << "  - " << *e << "\n";
         }

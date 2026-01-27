@@ -5,7 +5,7 @@
 #include "WaxService.h"
 #include "EcoService.h"
 
-static bool ieq(const std::string& a, const std::string& b) {
+static bool ieq(const std::string &a, const std::string &b) {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); ++i) {
         const unsigned char ca = static_cast<unsigned char>(a[i]);
@@ -15,11 +15,11 @@ static bool ieq(const std::string& a, const std::string& b) {
     return true;
 }
 
-std::unique_ptr<WashService> ServiceFactory::create(const std::string& key) {
-    if (ieq(key, "basic"))  return std::make_unique<BasicService>();
+std::unique_ptr<WashService> ServiceFactory::create(const std::string &key) {
+    if (ieq(key, "basic")) return std::make_unique<BasicService>();
     if (ieq(key, "deluxe")) return std::make_unique<DeluxeService>();
-    if (ieq(key, "wax"))    return std::make_unique<WaxService>();
-    if (ieq(key, "eco"))    return std::make_unique<EcoService>();
+    if (ieq(key, "wax")) return std::make_unique<WaxService>();
+    if (ieq(key, "eco")) return std::make_unique<EcoService>();
     return nullptr;
 }
 
@@ -32,7 +32,6 @@ std::unique_ptr<WashService> ServiceFactory::createConfigured(
     int shampooNeed,
     int waxNeed,
     double rating) {
-
     switch (kind) {
         case Kind::Basic:
             return std::make_unique<BasicService>(

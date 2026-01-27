@@ -1,13 +1,13 @@
 #pragma once
 #include <cstddef>
 
-template <typename T>
+template<typename T>
 class RunningStat {
     T sum_{};
     std::size_t count_{0};
 
 public:
-    void add(const T& v) {
+    void add(const T &v) {
         sum_ += v;
         ++count_;
     }

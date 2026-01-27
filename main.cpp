@@ -9,7 +9,7 @@
 
 int main() {
     try {
-        const int OPEN  = 8 * 60;
+        const int OPEN = 8 * 60;
         const int CLOSE = 12 * 60;
 
         Inventory inv(3000, 2000, 1500);
@@ -40,9 +40,9 @@ int main() {
         game.addService(*waxCfg);
         game.addService(*ecoCfg);
 
-        WashBay b1(1, OPEN,      "B1");
+        WashBay b1(1, OPEN, "B1");
         WashBay b2(2, OPEN + 10, "B2");
-        WashBay b3(3, OPEN + 5,  "B3");
+        WashBay b3(3, OPEN + 5, "B3");
 
         game.addBay(b1);
         game.addBay(b2);
@@ -55,10 +55,10 @@ int main() {
         game.run();
         return 0;
 #endif
-    } catch (const CarWashException& ex) {
+    } catch (const CarWashException &ex) {
         std::cerr << "Eroare CarWash: " << ex.what() << "\n";
         return 1;
-    } catch (const std::exception& ex) {
+    } catch (const std::exception &ex) {
         std::cerr << "Eroare neasteptata: " << ex.what() << "\n";
         return 1;
     } catch (...) {

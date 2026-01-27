@@ -5,31 +5,29 @@
 #include <iomanip>
 
 namespace {
-
-static std::string rarityToStr(AchievementRarity r) {
-    switch (r) {
-        case AchievementRarity::Common: return "Common";
-        case AchievementRarity::Rare: return "Rare";
-        case AchievementRarity::Epic: return "Epic";
-        case AchievementRarity::Legendary: return "Legendary";
+    static std::string rarityToStr(AchievementRarity r) {
+        switch (r) {
+            case AchievementRarity::Common: return "Common";
+            case AchievementRarity::Rare: return "Rare";
+            case AchievementRarity::Epic: return "Epic";
+            case AchievementRarity::Legendary: return "Legendary";
+        }
+        return "Common";
     }
-    return "Common";
-}
 
-static std::string catToStr(AchievementCategory c) {
-    switch (c) {
-        case AchievementCategory::Operations: return "Operations";
-        case AchievementCategory::Finance: return "Finance";
-        case AchievementCategory::Reputation: return "Reputation";
-        case AchievementCategory::Management: return "Management";
-        case AchievementCategory::Hidden: return "Hidden";
+    static std::string catToStr(AchievementCategory c) {
+        switch (c) {
+            case AchievementCategory::Operations: return "Operations";
+            case AchievementCategory::Finance: return "Finance";
+            case AchievementCategory::Reputation: return "Reputation";
+            case AchievementCategory::Management: return "Management";
+            case AchievementCategory::Hidden: return "Hidden";
+        }
+        return "Operations";
     }
-    return "Operations";
-}
-
 } // namespace
 
-void Achievement::unlock(CarWash& game) {
+void Achievement::unlock(CarWash &game) {
     if (unlocked_) return;
     unlocked_ = true;
 
@@ -41,7 +39,7 @@ void Achievement::unlock(CarWash& game) {
     game.logEvent("ACHIEVEMENT UNLOCKED: " + name_);
 }
 
-void Achievement::print(std::ostream& os) const {
+void Achievement::print(std::ostream &os) const {
     os << (unlocked_ ? "[UNLOCKED] " : "[LOCKED] ");
     os << displayName() << " | " << displayDesc();
     os << " | " << catToStr(category()) << " | " << rarityToStr(rarity());
@@ -49,103 +47,116 @@ void Achievement::print(std::ostream& os) const {
     os << " | " << progress() << "/" << target();
 }
 
-std::ostream& operator<<(std::ostream& os, const Achievement& a) {
+std::ostream &operator<<(std::ostream &os, const Achievement &a) {
     a.print(os);
     return os;
 }
 
 namespace {
+    struct ThresholdAch final : Achievement {
+        enum class Metric {
+            CarsServedTotal, CashTotal, ReputationScore, BaysCount, ServicesCount, UpgradesBought, SuppliesPacks,
+            PerfectDays
+        };
 
-struct ThresholdAch final : Achievement {
-    enum class Metric { CarsServedTotal, CashTotal, ReputationScore, BaysCount, ServicesCount, UpgradesBought, SuppliesPacks, PerfectDays };
+        Metric metric_;
+        int threshold_{1};
 
-    Metric metric_;
-    int threshold_{1};
-
-    ThresholdAch(std::string id, std::string name, std::string desc,
-                 AchievementCategory cat, AchievementRarity rar,
-                 Metric m, int threshold, const AchievementReward& reward, bool hidden = false)
-        : Achievement(std::move(id), std::move(name), std::move(desc), cat, rar, threshold, reward, hidden),
-          metric_(m),
-          threshold_(threshold) {}
-
-    void onEvent(CarWash& game, const AchievementEvent&) override {
-        if (unlocked_) return;
-
-        int value = 0;
-        switch (metric_) {
-            case Metric::CarsServedTotal: value = game.totalCarsServed(); break;
-            case Metric::CashTotal: value = static_cast<int>(game.totalCash()); break;
-            case Metric::ReputationScore: value = static_cast<int>(game.reputationScore() * 100.0); break;
-            case Metric::BaysCount: value = game.bayCount(); break;
-            case Metric::ServicesCount: value = game.serviceCount(); break;
-            case Metric::UpgradesBought: value = game.upgradesBought(); break;
-            case Metric::SuppliesPacks: value = game.suppliesPacksBought(); break;
-            case Metric::PerfectDays: value = game.perfectDaysCount(); break;
+        ThresholdAch(std::string id, std::string name, std::string desc,
+                     AchievementCategory cat, AchievementRarity rar,
+                     Metric m, int threshold, const AchievementReward &reward, bool hidden = false)
+            : Achievement(std::move(id), std::move(name), std::move(desc), cat, rar, threshold, reward, hidden),
+              metric_(m),
+              threshold_(threshold) {
         }
 
-        progress_ = std::min(value, threshold_);
-        if (value >= threshold_) unlock(game);
-    }
-};
+        void onEvent(CarWash &game, const AchievementEvent &) override {
+            if (unlocked_) return;
 
-struct PerfectDayAch final : Achievement {
-    int minServed_{0};
+            int value = 0;
+            switch (metric_) {
+                case Metric::CarsServedTotal: value = game.totalCarsServed();
+                    break;
+                case Metric::CashTotal: value = static_cast<int>(game.totalCash());
+                    break;
+                case Metric::ReputationScore: value = static_cast<int>(game.reputationScore() * 100.0);
+                    break;
+                case Metric::BaysCount: value = game.bayCount();
+                    break;
+                case Metric::ServicesCount: value = game.serviceCount();
+                    break;
+                case Metric::UpgradesBought: value = game.upgradesBought();
+                    break;
+                case Metric::SuppliesPacks: value = game.suppliesPacksBought();
+                    break;
+                case Metric::PerfectDays: value = game.perfectDaysCount();
+                    break;
+            }
 
-    PerfectDayAch(std::string id, std::string name, std::string desc,
-                  AchievementCategory cat, AchievementRarity rar,
-                  int minServed, const AchievementReward& reward)
-        : Achievement(std::move(id), std::move(name), std::move(desc), cat, rar, 1, reward, false),
-          minServed_(minServed) {}
+            progress_ = std::min(value, threshold_);
+            if (value >= threshold_) unlock(game);
+        }
+    };
 
-    void onEvent(CarWash& game, const AchievementEvent& ev) override {
-        if (unlocked_) return;
-        if (ev.type != AchievementEventType::DayEnd) return;
+    struct PerfectDayAch final : Achievement {
+        int minServed_{0};
 
-        const bool ok = (ev.dailyLost == 0 && ev.dailyServed >= minServed_);
-        progress_ = ok ? 1 : 0;
-        if (ok) unlock(game);
-    }
-};
+        PerfectDayAch(std::string id, std::string name, std::string desc,
+                      AchievementCategory cat, AchievementRarity rar,
+                      int minServed, const AchievementReward &reward)
+            : Achievement(std::move(id), std::move(name), std::move(desc), cat, rar, 1, reward, false),
+              minServed_(minServed) {
+        }
 
-struct RevenueDayAch final : Achievement {
-    double minRevenue_{0.0};
+        void onEvent(CarWash &game, const AchievementEvent &ev) override {
+            if (unlocked_) return;
+            if (ev.type != AchievementEventType::DayEnd) return;
 
-    RevenueDayAch(std::string id, std::string name, std::string desc,
-                  AchievementCategory cat, AchievementRarity rar,
-                  double minRevenue, const AchievementReward& reward, bool hidden = false)
-        : Achievement(std::move(id), std::move(name), std::move(desc), cat, rar, 1, reward, hidden),
-          minRevenue_(minRevenue) {}
+            const bool ok = (ev.dailyLost == 0 && ev.dailyServed >= minServed_);
+            progress_ = ok ? 1 : 0;
+            if (ok) unlock(game);
+        }
+    };
 
-    void onEvent(CarWash& game, const AchievementEvent& ev) override {
-        if (unlocked_) return;
-        if (ev.type != AchievementEventType::DayEnd) return;
+    struct RevenueDayAch final : Achievement {
+        double minRevenue_{0.0};
 
-        const bool ok = (ev.dailyRevenue >= minRevenue_);
-        progress_ = ok ? 1 : 0;
-        if (ok) unlock(game);
-    }
-};
+        RevenueDayAch(std::string id, std::string name, std::string desc,
+                      AchievementCategory cat, AchievementRarity rar,
+                      double minRevenue, const AchievementReward &reward, bool hidden = false)
+            : Achievement(std::move(id), std::move(name), std::move(desc), cat, rar, 1, reward, hidden),
+              minRevenue_(minRevenue) {
+        }
 
-struct AvgSatDayAch final : Achievement {
-    double minAvg_{0.0};
+        void onEvent(CarWash &game, const AchievementEvent &ev) override {
+            if (unlocked_) return;
+            if (ev.type != AchievementEventType::DayEnd) return;
 
-    AvgSatDayAch(std::string id, std::string name, std::string desc,
-                 AchievementCategory cat, AchievementRarity rar,
-                 double minAvg, const AchievementReward& reward, bool hidden = false)
-        : Achievement(std::move(id), std::move(name), std::move(desc), cat, rar, 1, reward, hidden),
-          minAvg_(minAvg) {}
+            const bool ok = (ev.dailyRevenue >= minRevenue_);
+            progress_ = ok ? 1 : 0;
+            if (ok) unlock(game);
+        }
+    };
 
-    void onEvent(CarWash& game, const AchievementEvent& ev) override {
-        if (unlocked_) return;
-        if (ev.type != AchievementEventType::DayEnd) return;
+    struct AvgSatDayAch final : Achievement {
+        double minAvg_{0.0};
 
-        const bool ok = (ev.dailyServed > 0 && ev.dailyAvgSat >= minAvg_);
-        progress_ = ok ? 1 : 0;
-        if (ok) unlock(game);
-    }
-};
+        AvgSatDayAch(std::string id, std::string name, std::string desc,
+                     AchievementCategory cat, AchievementRarity rar,
+                     double minAvg, const AchievementReward &reward, bool hidden = false)
+            : Achievement(std::move(id), std::move(name), std::move(desc), cat, rar, 1, reward, hidden),
+              minAvg_(minAvg) {
+        }
 
+        void onEvent(CarWash &game, const AchievementEvent &ev) override {
+            if (unlocked_) return;
+            if (ev.type != AchievementEventType::DayEnd) return;
+
+            const bool ok = (ev.dailyServed > 0 && ev.dailyAvgSat >= minAvg_);
+            progress_ = ok ? 1 : 0;
+            if (ok) unlock(game);
+        }
+    };
 } // namespace
 
 AchievementManager::AchievementManager() {
@@ -225,11 +236,11 @@ AchievementManager::AchievementManager() {
         4.80, AchievementReward{200.0, 3, 0.05, 0.10}, true));
 }
 
-void AchievementManager::dispatch(CarWash& game, const AchievementEvent& ev) {
-    for (auto& a : list_) a->onEvent(game, ev);
+void AchievementManager::dispatch(CarWash &game, const AchievementEvent &ev) {
+    for (auto &a: list_) a->onEvent(game, ev);
 }
 
-void AchievementManager::onServed(CarWash& game, int cars, double satisfaction, double revenue) {
+void AchievementManager::onServed(CarWash &game, int cars, double satisfaction, double revenue) {
     AchievementEvent ev;
     ev.type = AchievementEventType::Served;
     ev.cars = cars;
@@ -238,13 +249,13 @@ void AchievementManager::onServed(CarWash& game, int cars, double satisfaction, 
     dispatch(game, ev);
 }
 
-void AchievementManager::onLost(CarWash& game) {
+void AchievementManager::onLost(CarWash &game) {
     AchievementEvent ev;
     ev.type = AchievementEventType::Lost;
     dispatch(game, ev);
 }
 
-void AchievementManager::onDayEnd(CarWash& game, int day, int served, int lost, double revenue, double avgSat) {
+void AchievementManager::onDayEnd(CarWash &game, int day, int served, int lost, double revenue, double avgSat) {
     if (lost == 0 && served >= 5) perfectDays_++;
 
     AchievementEvent ev;
@@ -257,7 +268,7 @@ void AchievementManager::onDayEnd(CarWash& game, int day, int served, int lost, 
     dispatch(game, ev);
 }
 
-void AchievementManager::onBuySupplies(CarWash& game, const std::string& item, int packs, double cost) {
+void AchievementManager::onBuySupplies(CarWash &game, const std::string &item, int packs, double cost) {
     totalSuppliesPacks_ += packs;
     AchievementEvent ev;
     ev.type = AchievementEventType::BuySupplies;
@@ -267,7 +278,7 @@ void AchievementManager::onBuySupplies(CarWash& game, const std::string& item, i
     dispatch(game, ev);
 }
 
-void AchievementManager::onBuyUpgrade(CarWash& game, int upgradeId, double cost) {
+void AchievementManager::onBuyUpgrade(CarWash &game, int upgradeId, double cost) {
     totalUpgrades_ += 1;
     AchievementEvent ev;
     ev.type = AchievementEventType::BuyUpgrade;
@@ -276,28 +287,28 @@ void AchievementManager::onBuyUpgrade(CarWash& game, int upgradeId, double cost)
     dispatch(game, ev);
 }
 
-void AchievementManager::onStructureChanged(CarWash& game) {
+void AchievementManager::onStructureChanged(CarWash &game) {
     AchievementEvent ev;
     ev.type = AchievementEventType::StructureChanged;
     dispatch(game, ev);
 }
 
-void AchievementManager::print(std::ostream& os) const {
+void AchievementManager::print(std::ostream &os) const {
     os << "=== ACHIEVEMENTS ===\n";
 
-    std::vector<const Achievement*> v;
+    std::vector<const Achievement *> v;
     v.reserve(list_.size());
-    for (const auto& p : list_) v.push_back(p.get());
+    for (const auto &p: list_) v.push_back(p.get());
 
-    std::sort(v.begin(), v.end(), [](const Achievement* a, const Achievement* b) {
+    std::sort(v.begin(), v.end(), [](const Achievement *a, const Achievement *b) {
         if (a->unlocked() != b->unlocked()) return a->unlocked();
         if (a->category() != b->category()) return static_cast<int>(a->category()) < static_cast<int>(b->category());
         return a->displayName() < b->displayName();
     });
 
-    for (const auto* a : v) os << *a << "\n";
+    for (const auto *a: v) os << *a << "\n";
 
     os << "Stats: supplies_packs=" << totalSuppliesPacks()
-       << " upgrades=" << totalUpgrades()
-       << " perfect_days=" << perfectDays_ << "\n";
+            << " upgrades=" << totalUpgrades()
+            << " perfect_days=" << perfectDays_ << "\n";
 }

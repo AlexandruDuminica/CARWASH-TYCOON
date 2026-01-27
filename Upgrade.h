@@ -1,57 +1,68 @@
 #pragma once
 
-#include <string>
-#include <iosfwd>
 #include <memory>
+#include <ostream>
+#include <string>
 
-class CarWash;   // forward declare, fara include
+class CarWash;
 
 class Upgrade {
-protected:
-    std::string name_;
-    std::string description_;
-    double cost_;
-
 public:
-    Upgrade(std::string name, std::string desc, double cost)
-        : name_(std::move(name)), description_(std::move(desc)), cost_(cost) {}
-
     virtual ~Upgrade() = default;
 
-    const std::string& name() const noexcept { return name_; }
-    const std::string& description() const noexcept { return description_; }
-    double cost() const noexcept { return cost_; }
+    virtual std::string name() const = 0;
 
-    virtual void apply(CarWash& wash) = 0;
-    virtual std::unique_ptr<Upgrade> clone() const = 0;
+    virtual std::string description() const = 0;
 
-    virtual void print(std::ostream& os) const;
-    friend std::ostream& operator<<(std::ostream&, const Upgrade&);
+    virtual double cost() const = 0;
+
+    virtual void apply(CarWash &cw) const = 0;
+
+    virtual void print(std::ostream &os) const;
 };
 
-class BaySpeedUpgrade : public Upgrade {
-public:
-    BaySpeedUpgrade()
-        : Upgrade("BaySpeed", "Creste viteza bailor cu 20%", 300.0) {}
+std::ostream &operator<<(std::ostream &os, const Upgrade &up);
 
-    void apply(CarWash& wash) override;
-    std::unique_ptr<Upgrade> clone() const override;
+class BaySpeedUpgrade final : public Upgrade {
+public:
+    std::string name() const override;
+
+    std::string description() const override;
+
+    double cost() const override;
+
+    void apply(CarWash &cw) const override;
 };
 
-class ComfortUpgrade : public Upgrade {
+class ComfortUpgrade final : public Upgrade {
 public:
-    ComfortUpgrade()
-        : Upgrade("Comfort", "Creste confortul clientilor", 200.0) {}
+    std::string name() const override;
 
-    void apply(CarWash& wash) override;
-    std::unique_ptr<Upgrade> clone() const override;
+    std::string description() const override;
+
+    double cost() const override;
+
+    void apply(CarWash &cw) const override;
 };
 
-class MarketingUpgrade : public Upgrade {
+class MarketingUpgrade final : public Upgrade {
 public:
-    MarketingUpgrade()
-        : Upgrade("Marketing", "Creste cererea initiala", 250.0) {}
+    std::string name() const override;
 
-    void apply(CarWash& wash) override;
-    std::unique_ptr<Upgrade> clone() const override;
+    std::string description() const override;
+
+    double cost() const override;
+
+    void apply(CarWash &cw) const override;
+};
+
+class NanoCoatingUpgrade final : public Upgrade {
+public:
+    std::string name() const override;
+
+    std::string description() const override;
+
+    double cost() const override;
+
+    void apply(CarWash &cw) const override;
 };

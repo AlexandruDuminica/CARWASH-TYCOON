@@ -1,6 +1,6 @@
 name: Renovate OS
 on:
-  workflow_dispatch: {}
+  workflow_dispatch: { }
 
 jobs:
   Renovate:

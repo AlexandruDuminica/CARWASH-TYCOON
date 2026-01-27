@@ -9,7 +9,7 @@
 class CarWash;
 
 class GoalManager {
-    std::vector<std::unique_ptr<Goal>> goals_;
+    std::vector<std::unique_ptr<Goal> > goals_;
 
 public:
     GoalManager() = default;
@@ -18,7 +18,7 @@ public:
         goals_.push_back(std::move(g));
     }
 
-    void checkAll(const CarWash& wash);
+    void checkAll(const CarWash &wash);
 
     bool allAchieved() const;
 
@@ -26,5 +26,5 @@ public:
     double completionRatio() const;
 
 
-    void print(std::ostream& os, const CarWash& wash) const;
+    void print(std::ostream &os, const CarWash &wash) const;
 };

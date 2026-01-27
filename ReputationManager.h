@@ -11,6 +11,7 @@ class ReputationManager {
 
 public:
     void onServed(double satisfaction);
+
     void onLost();
 
     double score() const noexcept { return score_; }

@@ -6,6 +6,7 @@
 class CarWash;
 
 enum class AchievementRarity { Common, Rare, Epic, Legendary };
+
 enum class AchievementCategory { Operations, Finance, Reputation, Management, Hidden };
 
 struct AchievementReward {
@@ -61,7 +62,7 @@ protected:
 public:
     Achievement(std::string id, std::string name, std::string desc,
                 AchievementCategory cat, AchievementRarity rar,
-                int target, const AchievementReward& reward, bool hidden = false)
+                int target, const AchievementReward &reward, bool hidden = false)
         : id_(std::move(id)),
           name_(std::move(name)),
           desc_(std::move(desc)),
@@ -69,11 +70,12 @@ public:
           rarity_(rar),
           hidden_(hidden),
           target_(target),
-          reward_(reward) {}
+          reward_(reward) {
+    }
 
     virtual ~Achievement() = default;
 
-    const std::string& id() const noexcept { return id_; }
+    const std::string &id() const noexcept { return id_; }
     bool unlocked() const noexcept { return unlocked_; }
     bool hidden() const noexcept { return hidden_; }
     int progress() const noexcept { return progress_; }
@@ -92,11 +94,11 @@ public:
         return desc_;
     }
 
-    virtual void onEvent(CarWash& game, const AchievementEvent& ev) = 0;
+    virtual void onEvent(CarWash &game, const AchievementEvent &ev) = 0;
 
-    void unlock(CarWash& game);
+    void unlock(CarWash &game);
 
-    void print(std::ostream& os) const;
+    void print(std::ostream &os) const;
 };
 
-std::ostream& operator<<(std::ostream& os, const Achievement& a);
+std::ostream &operator<<(std::ostream &os, const Achievement &a);

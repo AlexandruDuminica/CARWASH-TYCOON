@@ -1,36 +1,33 @@
 #include "Upgrade.h"
 #include "CarWash.h"
+
 #include <ostream>
 
-void Upgrade::print(std::ostream& os) const {
-    os << name_ << " (" << description_ << ", cost=" << cost_ << " EUR)";
+void Upgrade::print(std::ostream &os) const {
+    os << name() << " | " << description() << " | cost=" << cost();
 }
 
-std::ostream& operator<<(std::ostream& os, const Upgrade& u) {
-    u.print(os);
+std::ostream &operator<<(std::ostream &os, const Upgrade &up) {
+    up.print(os);
     return os;
 }
 
-void BaySpeedUpgrade::apply(CarWash& wash) {
-    wash.increaseSpeedFactor(0.2); // +20%
-}
+std::string BaySpeedUpgrade::name() const { return "Bay Speed"; }
+std::string BaySpeedUpgrade::description() const { return "Increase processing speed"; }
+double BaySpeedUpgrade::cost() const { return 120.0; }
+void BaySpeedUpgrade::apply(CarWash &cw) const { cw.increaseSpeedFactor(0.15); }
 
-std::unique_ptr<Upgrade> BaySpeedUpgrade::clone() const {
-    return std::make_unique<BaySpeedUpgrade>(*this);
-}
+std::string ComfortUpgrade::name() const { return "Comfort"; }
+std::string ComfortUpgrade::description() const { return "Increase satisfaction bonus"; }
+double ComfortUpgrade::cost() const { return 90.0; }
+void ComfortUpgrade::apply(CarWash &cw) const { cw.increaseComfortBonus(0.15); }
 
-void ComfortUpgrade::apply(CarWash& wash) {
-    wash.increaseComfortBonus(0.5);
-}
+std::string MarketingUpgrade::name() const { return "Marketing"; }
+std::string MarketingUpgrade::description() const { return "Increase base demand"; }
+double MarketingUpgrade::cost() const { return 110.0; }
+void MarketingUpgrade::apply(CarWash &cw) const { cw.increaseBaseDemand(1); }
 
-std::unique_ptr<Upgrade> ComfortUpgrade::clone() const {
-    return std::make_unique<ComfortUpgrade>(*this);
-}
-
-void MarketingUpgrade::apply(CarWash& wash) {
-    wash.increaseBaseDemand(1);
-}
-
-std::unique_ptr<Upgrade> MarketingUpgrade::clone() const {
-    return std::make_unique<MarketingUpgrade>(*this);
-}
+std::string NanoCoatingUpgrade::name() const { return "Nano Coating"; }
+std::string NanoCoatingUpgrade::description() const { return "Enhance Wax services (price + rating)"; }
+double NanoCoatingUpgrade::cost() const { return 140.0; }
+void NanoCoatingUpgrade::apply(CarWash &cw) const { cw.enableNanoCoating(); }

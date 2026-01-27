@@ -1,6 +1,8 @@
 {
   "recreateWhen": "always",
-  "enabledManagers": ["regex"],
+  "enabledManagers": [
+    "regex"
+  ],
   "baseBranches": [
     "baze-de-date/pqxx",
     "baze-de-date/sqlite",

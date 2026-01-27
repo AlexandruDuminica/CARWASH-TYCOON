@@ -1,6 +1,6 @@
 name: Renovate CI
 on:
-  workflow_dispatch: {}
+  workflow_dispatch: { }
 
 jobs:
   Renovate:

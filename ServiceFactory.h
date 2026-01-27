@@ -9,7 +9,7 @@ class ServiceFactory {
 public:
     enum class Kind { Basic, Deluxe, Wax, Eco };
 
-    static std::unique_ptr<WashService> create(const std::string& key);
+    static std::unique_ptr<WashService> create(const std::string &key);
 
     static std::unique_ptr<WashService> createConfigured(
         Kind kind,

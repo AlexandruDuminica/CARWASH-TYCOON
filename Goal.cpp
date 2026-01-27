@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-bool ProfitGoal::check(const CarWash& wash) {
+bool ProfitGoal::check(const CarWash &wash) {
     double cash = wash.totalCash();
     if (target_ <= 0.0) {
         setProgressInternal(1.0);
@@ -18,7 +18,7 @@ bool ProfitGoal::check(const CarWash& wash) {
     return achieved_;
 }
 
-bool CarsServedGoal::check(const CarWash& wash) {
+bool CarsServedGoal::check(const CarWash &wash) {
     int cars = wash.totalCarsServed();
     if (target_ <= 0) {
         setProgressInternal(1.0);
@@ -33,7 +33,7 @@ bool CarsServedGoal::check(const CarWash& wash) {
     return achieved_;
 }
 
-bool RatingGoal::check(const CarWash& wash) {
+bool RatingGoal::check(const CarWash &wash) {
     double avg = wash.averageSatisfaction();
     if (target_ <= 0.0) {
         setProgressInternal(1.0);

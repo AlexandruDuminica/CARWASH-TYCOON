@@ -1,6 +1,8 @@
 #pragma once
 
 #include "WashService.h"
+#include <memory>
+#include <string>
 
 class DeluxeService final : public WashService {
 public:
@@ -8,10 +10,9 @@ public:
 
     DeluxeService(std::string name, int durationMin, double price,
                   int waterNeed, int shampooNeed, int waxNeed,
-                  double rating = 4.2);
+                  double rating);
 
-    void print(std::ostream& os) const override;
-    double finalPriceForCars(int cars) const;
+    ~DeluxeService() override = default;
 
     std::unique_ptr<WashService> clone() const override;
 };

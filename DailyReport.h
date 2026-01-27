@@ -21,7 +21,9 @@ public:
     DailyReport() = default;
 
     void beginDay(int day);
-    void addServiceSale(const std::string& name, double price);
+
+    void addServiceSale(const std::string &name, double price);
+
     void finalize(int totalCars, int lost, double avgSat, double totalRevenue);
 
     int day() const noexcept { return day_; }
@@ -29,9 +31,9 @@ public:
     int lostCustomers() const noexcept { return lostCustomers_; }
     double totalRevenue() const noexcept { return totalRevenue_; }
     double avgSatisfaction() const noexcept { return avgSatisfaction_; }
-    const std::map<std::string, ServiceStats>& perService() const noexcept { return perService_; }
+    const std::map<std::string, ServiceStats> &perService() const noexcept { return perService_; }
 
-    void print(std::ostream& os) const;
+    void print(std::ostream &os) const;
 };
 
-std::ostream& operator<<(std::ostream& os, const DailyReport& rep);
+std::ostream &operator<<(std::ostream &os, const DailyReport &rep);

@@ -10,7 +10,8 @@ public:
                  int waterNeed, int shampooNeed, int waxNeed,
                  double rating = 3.6);
 
-    void print(std::ostream& os) const override;
+    void print(std::ostream &os) const override;
+
     double finalPriceForCars(int cars) const;
 
     [[nodiscard]] std::unique_ptr<WashService> clone() const override;

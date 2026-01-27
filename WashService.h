@@ -2,47 +2,46 @@
 
 #include <memory>
 #include <string>
+#include <iosfwd>
+
+enum class ServiceKind { Basic, Deluxe, Wax, Eco, Custom };
 
 class WashService {
 protected:
     std::string name_;
-    int duration_;
-    double price_;
-    int water_;
-    int shampoo_;
-    int wax_;
-    double rating_;
+    int duration_{0};
+    double price_{0.0};
+    int needW_{0};
+    int needS_{0};
+    int needX_{0};
+    double rating_{0.0};
+    ServiceKind kind_{ServiceKind::Custom};
 
 public:
-    WashService(std::string name, int duration, double price,
-                int water, int shampoo, int wax,
-                double rating = 3.0);
+    WashService(std::string name, int durationMin, double price,
+                int waterNeed, int shampooNeed, int waxNeed, double rating,
+                ServiceKind kind = ServiceKind::Custom);
 
     virtual ~WashService() = default;
 
+    const std::string &name() const noexcept { return name_; }
+    int duration() const noexcept { return duration_; }
+    double price() const noexcept { return price_; }
+    int needW() const noexcept { return needW_; }
+    int needS() const noexcept { return needS_; }
+    int needX() const noexcept { return needX_; }
+    double rating() const noexcept { return rating_; }
+
+    ServiceKind kind() const noexcept { return kind_; }
+    bool isPremium() const noexcept { return kind_ == ServiceKind::Deluxe || kind_ == ServiceKind::Wax; }
+
+    virtual void print(std::ostream &os) const;
+
     virtual std::unique_ptr<WashService> clone() const = 0;
 
-    const std::string& name() const noexcept;
-    int duration() const noexcept;
-    double price() const noexcept;
+    void applyFactor(double factor);
 
-    int waterNeed() const noexcept;
-    int shampooNeed() const noexcept;
-    int waxNeed() const noexcept;
-
-    int needW() const noexcept { return waterNeed(); }
-    int needS() const noexcept { return shampooNeed(); }
-    int needX() const noexcept { return waxNeed(); }
-
-    double rating() const noexcept;
-
-    void applyFactor(double factor) {
-        if (factor <= 0.0) return;
-        price_ *= factor;
-        if (price_ < 0.0) price_ = 0.0;
-    }
-
-    virtual void print(std::ostream& os) const = 0;
-
-    friend std::ostream& operator<<(std::ostream& os, const WashService& s);
+    static std::string kindToString(ServiceKind k);
 };
+
+std::ostream &operator<<(std::ostream &os, const WashService &s);

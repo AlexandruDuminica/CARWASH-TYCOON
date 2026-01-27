@@ -4,11 +4,11 @@
 #include <ostream>
 #include <iomanip>
 
-void Event::print(std::ostream& os) const {
+void Event::print(std::ostream &os) const {
     os << name_ << " - " << description_;
 }
 
-std::ostream& operator<<(std::ostream& os, const Event& ev) {
+std::ostream &operator<<(std::ostream &os, const Event &ev) {
     ev.print(os);
     return os;
 }
@@ -16,9 +16,10 @@ std::ostream& operator<<(std::ostream& os, const Event& ev) {
 // WeatherEvent
 
 WeatherEvent::WeatherEvent(double intensity)
-    : Event("Weather", "Vreme ploioasa / murdara"), intensity_(intensity) {}
+    : Event("Weather", "Vreme ploioasa / murdara"), intensity_(intensity) {
+}
 
-void WeatherEvent::apply(CarWash& wash) {
+void WeatherEvent::apply(CarWash &wash) {
     if (intensity_ <= 0.0) return;
 
     // vreme urata => mai multe masini murdare => cerere mai mare
@@ -32,32 +33,33 @@ void WeatherEvent::apply(CarWash& wash) {
     wash.logEvent("WeatherEvent apply: intensity=" + std::to_string(intensity_));
 }
 
-void WeatherEvent::print(std::ostream& os) const {
+void WeatherEvent::print(std::ostream &os) const {
     os << "[WeatherEvent] intensitate=" << std::fixed << std::setprecision(2)
-       << intensity_ << " (" << description_ << ")";
+            << intensity_ << " (" << description_ << ")";
 }
 
 
-
 HolidayEvent::HolidayEvent()
-    : Event("Holiday", "Zi de weekend / sarbatoare, trafic crescut") {}
+    : Event("Holiday", "Zi de weekend / sarbatoare, trafic crescut") {
+}
 
-void HolidayEvent::apply(CarWash& wash) {
+void HolidayEvent::apply(CarWash &wash) {
     wash.increaseBaseDemand(2);
     wash.increaseComfortBonus(0.2);
     wash.logEvent("HolidayEvent apply");
 }
 
-void HolidayEvent::print(std::ostream& os) const {
+void HolidayEvent::print(std::ostream &os) const {
     os << "[HolidayEvent] " << description_;
 }
 
 // InspectionEvent
 
 InspectionEvent::InspectionEvent(double severity)
-    : Event("Inspection", "Inspectie a autoritatilor"), severity_(severity) {}
+    : Event("Inspection", "Inspectie a autoritatilor"), severity_(severity) {
+}
 
-void InspectionEvent::apply(CarWash& wash) {
+void InspectionEvent::apply(CarWash &wash) {
     double avg = wash.averageSatisfaction();
     double fine = 0.0;
 
@@ -78,7 +80,7 @@ void InspectionEvent::apply(CarWash& wash) {
     }
 }
 
-void InspectionEvent::print(std::ostream& os) const {
+void InspectionEvent::print(std::ostream &os) const {
     os << "[InspectionEvent] severitate=" << std::fixed << std::setprecision(2)
-       << severity_ << " (" << description_ << ")";
+            << severity_ << " (" << description_ << ")";
 }

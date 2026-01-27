@@ -6,15 +6,15 @@
 
 void CarQueue::generateRandomCustomers() {
     for (int i = 0; i < demandPerHour_; ++i) {
-        double baseBudget = 10.0 + std::rand() % 20;   // 10 .. 30 EUR
+        double baseBudget = 10.0 + std::rand() % 20; // 10 .. 30 EUR
         double impatience = 0.5 + (std::rand() % 150) / 100.0; // 0.5 .. 2.0
 
         int t = std::rand() % 4;
         std::unique_ptr<Customer> c;
-        if (t == 0)      c = std::make_unique<RushedCustomer>(nextId_, baseBudget, impatience);
+        if (t == 0) c = std::make_unique<RushedCustomer>(nextId_, baseBudget, impatience);
         else if (t == 1) c = std::make_unique<BudgetCustomer>(nextId_, baseBudget, impatience);
         else if (t == 2) c = std::make_unique<PremiumCustomer>(nextId_, baseBudget * 1.5, impatience);
-        else             c = std::make_unique<EcoCustomer>(nextId_, baseBudget, impatience);
+        else c = std::make_unique<EcoCustomer>(nextId_, baseBudget, impatience);
 
         ++nextId_;
         q_.push_back(std::move(c));
@@ -42,11 +42,11 @@ void CarQueue::decreaseDemand() {
 
 void CarQueue::print(std::ostream &os) const {
     os << "Queue{pending=" << q_.size()
-       << ", lost=" << lost_
-       << ", demand/h=" << demandPerHour_ << "}";
+            << ", lost=" << lost_
+            << ", demand/h=" << demandPerHour_ << "}";
 }
 
-std::ostream& operator<<(std::ostream& os, const CarQueue& cq) {
+std::ostream &operator<<(std::ostream &os, const CarQueue &cq) {
     cq.print(os);
     return os;
 }

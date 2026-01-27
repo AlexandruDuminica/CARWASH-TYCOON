@@ -2,8 +2,8 @@ name: C++ CI
 
 on:
   push:
-    branches: ['**'] # NOTE: replace/update with appropriate branch name(s)
-    tags: ['**']
+    branches: [ '**' ] # NOTE: replace/update with appropriate branch name(s)
+    tags: [ '**' ]
   # pull_request:
   #   branches: ['**'] # NOTE: replace/update with appropriate branch name(s)
   workflow_dispatch:
@@ -105,7 +105,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-            # renovate: depName=ubuntu
+          # renovate: depName=ubuntu
           - os: ubuntu-22.04
             c: clang-18
             cxx: clang++-18
