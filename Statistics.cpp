@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <numeric>
 #include <ostream>
+#include <vector>
 
 Statistics::Statistics(std::vector<DailyReport> reps)
     : reports_(std::move(reps)) {}
@@ -115,7 +116,9 @@ int Statistics::worstDayByLost() const noexcept {
 std::map<std::string, ServiceAggregate> Statistics::aggregateServices(const std::vector<DailyReport>& reps) {
     std::map<std::string, ServiceAggregate> agg;
     for (const auto& r : reps) {
-        for (const auto& [name, st] : r.perService()) {
+        for (const auto& kv : r.perService()) {
+            const auto& name = kv.first;
+            const auto& st = kv.second;
             auto& a = agg[name];
             a.cars += st.cars;
             a.revenue += st.revenue;
@@ -183,14 +186,42 @@ void Statistics::print(std::ostream& os) const {
     os << "Best day by lost: " << bestDayByLost() << "\n";
     os << "Worst day by lost: " << worstDayByLost() << "\n";
 
+    const auto rev = revenueSeries();
+    const auto sat = satisfactionSeries();
+    const auto lost = lostSeries();
+
+    auto minmaxRev = std::minmax_element(rev.begin(), rev.end());
+    auto minmaxSat = std::minmax_element(sat.begin(), sat.end());
+    auto minmaxLost = std::minmax_element(lost.begin(), lost.end());
+
+    const double revTrend = (rev.size() >= 2) ? (rev.back() - rev.front()) : 0.0;
+    const double satTrend = (sat.size() >= 2) ? (sat.back() - sat.front()) : 0.0;
+    const int lostTrend = (lost.size() >= 2) ? (lost.back() - lost.front()) : 0;
+
+    os << "Revenue min/max: "
+       << std::setprecision(2)
+       << (rev.empty() ? 0.0 : *minmaxRev.first) << " / " << (rev.empty() ? 0.0 : *minmaxRev.second)
+       << " | trend=" << revTrend << "\n";
+
+    os << "Satisfaction min/max: "
+       << std::setprecision(3)
+       << (sat.empty() ? 0.0 : *minmaxSat.first) << " / " << (sat.empty() ? 0.0 : *minmaxSat.second)
+       << " | trend=" << satTrend << "\n";
+
+    os << "Lost min/max: "
+       << (lost.empty() ? 0 : *minmaxLost.first) << " / " << (lost.empty() ? 0 : *minmaxLost.second)
+       << " | trend=" << lostTrend << "\n";
+
     os << "Top services by revenue:\n";
-    for (const auto& [name, a] : topServicesByRevenue(5)) {
-        os << "  - " << name << ": revenue=" << std::setprecision(2) << a.revenue << " cars=" << a.cars << "\n";
+    for (const auto& p : topServicesByRevenue(5)) {
+        os << "  - " << p.first << ": revenue=" << std::setprecision(2) << p.second.revenue
+           << " cars=" << p.second.cars << "\n";
     }
 
     os << "Top services by cars:\n";
-    for (const auto& [name, a] : topServicesByCars(5)) {
-        os << "  - " << name << ": cars=" << a.cars << " revenue=" << std::setprecision(2) << a.revenue << "\n";
+    for (const auto& p : topServicesByCars(5)) {
+        os << "  - " << p.first << ": cars=" << p.second.cars
+           << " revenue=" << std::setprecision(2) << p.second.revenue << "\n";
     }
 
     os << "Series (day -> revenue, sat, lost):\n";
