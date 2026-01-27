@@ -295,6 +295,8 @@ void CarWash::showDashboard() const {
     std::cout << "Cash: " << std::fixed << std::setprecision(2) << cash_ << " EUR\n";
     std::cout << "Cars served: " << totalCarsServed_ << "\n";
     std::cout << "Avg satisfaction: " << std::setprecision(2) << averageSatisfaction() << "\n";
+    std::cout << "Today satisfaction: " << std::setprecision(2) << avgSatisfactionToday()
+              << " (n=" << servedSamplesToday() << ")\n";
     std::cout << "Reputation score: " << std::setprecision(2) << reputation_.score() << "\n";
     std::cout << "Queue: " << queue_ << "\n";
     std::cout << "SpeedFactor: " << speedFactor_
@@ -305,6 +307,7 @@ void CarWash::showDashboard() const {
     }
     std::cout << "================================\n";
 }
+
 
 void CarWash::showReports() const {
     if (reports_.empty()) {

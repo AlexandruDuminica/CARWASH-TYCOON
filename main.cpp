@@ -6,66 +6,39 @@
 #include "Inventory.h"
 #include "ServiceFactory.h"
 #include "WashBay.h"
-#include "BasicService.h"
 
 int main() {
-#ifdef GITHUB_ACTIONS
-    try {
-        showStatus();
-        showServices();
-        showBays();
-        showGoals();
-        showUpgrades();
-        showReports();
-
-        // Exercitam explicit shop-ul in CI (altfel cppcheck il vede "unusedFunction")
-        adjustCash(200.0);     // avem bani ca buySupplies sa nu arunce exceptie
-        showShop();
-        buySupplies("water", 1);
-        buySupplies("shampoo", 1);
-        showShop();
-
-        setPricingMode("balanced");
-        nextCommand();
-
-        try {
-            buyUpgrade(1);
-        } catch (const CarWashException&) {
-        }
-
-        showDashboard();
-    } catch (const CarWashException& ex) {
-        std::cout << "Eroare: " << ex.what() << "\n";
-    }
-
-    std::cout << "=== FINAL (CI) ===\n";
-
-
-#else
     try {
         const int OPEN  = 8 * 60;
         const int CLOSE = 12 * 60;
 
         Inventory inv(3000, 2000, 1500);
+        std::cout << "Initial inventory: " << inv << "\n";
+
         CarWash game("CarWash TYCOON", inv, OPEN, CLOSE);
 
-        auto s1 = ServiceFactory::createConfigured(
-            ServiceFactory::Kind::Basic,  "Basic",  20,  8.0,  80, 40,  0);
-        auto s2 = ServiceFactory::createConfigured(
-            ServiceFactory::Kind::Deluxe, "Deluxe", 35, 14.5, 120, 60,  0);
-        auto s3 = ServiceFactory::createConfigured(
-            ServiceFactory::Kind::Wax,    "Wax",    25, 16.0,  60, 20, 50);
-        auto s4 = ServiceFactory::createConfigured(
-            ServiceFactory::Kind::Eco,    "Eco",    30, 12.0,  50, 30,  0);
+        auto basicDefault = ServiceFactory::create("basic");
+        auto basicCfg = ServiceFactory::createConfigured(
+            ServiceFactory::Kind::Basic, "Basic", 20, 8.0, 80, 40, 0);
 
-        if (!s1 || !s2 || !s3 || !s4) {
+        auto deluxeCfg = ServiceFactory::createConfigured(
+            ServiceFactory::Kind::Deluxe, "Deluxe", 35, 14.5, 120, 60, 0);
+
+        auto waxCfg = ServiceFactory::createConfigured(
+            ServiceFactory::Kind::Wax, "Wax", 25, 16.0, 60, 20, 50);
+
+        auto ecoCfg = ServiceFactory::createConfigured(
+            ServiceFactory::Kind::Eco, "Eco", 30, 12.0, 50, 30, 0);
+
+        if (!basicDefault || !basicCfg || !deluxeCfg || !waxCfg || !ecoCfg) {
             throw CarWashException("ServiceFactory a returnat nullptr");
         }
 
-        game.addService(*s1);
-        game.addService(*s2);
-        game.addService(*s3);
-        game.addService(*s4);
+        game.addService(*basicDefault);
+        game.addService(*basicCfg);
+        game.addService(*deluxeCfg);
+        game.addService(*waxCfg);
+        game.addService(*ecoCfg);
 
         WashBay b1(1, OPEN,      "B1");
         WashBay b2(2, OPEN + 10, "B2");
@@ -75,7 +48,19 @@ int main() {
         game.addBay(b2);
         game.addBay(b3);
 
+#ifdef GITHUB_ACTIONS
+        game.adjustCash(200.0);
+        game.showShop();
+        game.buySupplies("water", 1);
+        game.buySupplies("shampoo", 1);
+        game.showShop();
+        game.showDashboard();
+        std::cout << "CARWASH TYCOON CI smoke test OK\n";
+        return 0;
+#else
         game.run();
+        return 0;
+#endif
     } catch (const CarWashException& ex) {
         std::cerr << "Eroare CarWash: " << ex.what() << "\n";
         return 1;
@@ -86,7 +71,4 @@ int main() {
         std::cerr << "Eroare necunoscuta.\n";
         return 1;
     }
-
-    return 0;
-#endif
 }

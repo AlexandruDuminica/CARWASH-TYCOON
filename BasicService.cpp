@@ -12,7 +12,9 @@ BasicService::BasicService(std::string name, int durationMin, double price,
 
 void BasicService::print(std::ostream& os) const {
     os << "BasicService(" << name_ << ", " << duration_ << " min, "
-       << price_ << " EUR, rating=" << rating_ << ")";
+       << price_ << " EUR"
+       << ", 3cars=" << finalPriceForCars(3)
+       << ", rating=" << rating_ << ")";
 }
 
 double BasicService::finalPriceForCars(int cars) const {

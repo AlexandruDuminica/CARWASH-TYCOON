@@ -19,8 +19,8 @@ bool Inventory::takeIfCan(const WashService& sp, int cars) {
 }
 
 std::ostream& operator<<(std::ostream& os, const Inventory& inv) {
-    os << "Inventory{water=" << inv.water_
-       << ", shampoo=" << inv.shampoo_
-       << ", wax=" << inv.wax_ << "}";
+    os << "Inventory{water=" << inv.water()
+       << ", shampoo=" << inv.shampoo()
+       << ", wax=" << inv.wax() << "}";
     return os;
 }
