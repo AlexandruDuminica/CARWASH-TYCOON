@@ -94,6 +94,9 @@ add_executable(${MAIN_EXECUTABLE_NAME}
         ServiceFactory.h
         RunningStat.h
         MathUtils.h
+        Achievement.h
+        AchievementManager.cpp
+        AchievementManager.h
 )
 
 # NOTE: Add all defined targets (e.g. executables, libraries, etc. )

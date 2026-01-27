@@ -19,6 +19,7 @@
 #include "ReputationManager.h"
 #include "PricingStrategy.h"
 #include "DailyReport.h"
+#include "AchievementManager.h"
 
 class CarWash {
     std::string name_;
@@ -39,6 +40,7 @@ class CarWash {
     EventManager events_;
     ReputationManager reputation_;
     std::unique_ptr<PricingStrategy> pricing_;
+    AchievementManager achievements_;
 
     int totalCarsServed_{0};
     double totalSatisfaction_{0.0};
@@ -57,6 +59,9 @@ class CarWash {
     double comfortBonus_{0.0};
     int baseDemandBonus_{0};
 
+    int totalSuppliesPacksBought_{0};
+    int upgradesBought_{0};
+
     static constexpr int MAX_SERV = 20;
     static constexpr int MAX_BAYS = 20;
 
@@ -69,6 +74,7 @@ class CarWash {
 
 public:
     CarWash(std::string n, Inventory inv, int openM, int closeM);
+
     [[nodiscard]] double avgSatisfactionToday() const noexcept { return reputation_.avgSatisfaction(); }
     [[nodiscard]] int servedSamplesToday() const noexcept { return reputation_.totalServedSamples(); }
 
@@ -89,12 +95,11 @@ public:
     void showDashboard() const;
     void showReports() const;
     void showHelp() const;
-
-
     void showShop() const;
-    void buySupplies(const std::string& item, int packs = 1);
+    void showAchievements() const;
 
     void buyUpgrade(int id);
+    void buySupplies(const std::string& item, int packs = 1);
 
     void increaseSpeedFactor(double delta)   { speedFactor_     += delta; }
     void increaseComfortBonus(double delta)  { comfortBonus_    += delta; }
@@ -114,18 +119,23 @@ public:
     [[nodiscard]] double reputationScore() const noexcept { return reputation_.score(); }
     [[nodiscard]] int currentDemand() const noexcept { return queue_.demand(); }
 
+    [[nodiscard]] int bayCount() const noexcept { return static_cast<int>(bays_.size()); }
+    [[nodiscard]] int serviceCount() const noexcept { return static_cast<int>(services_.size()); }
+    [[nodiscard]] int upgradesBought() const noexcept { return upgradesBought_; }
+    [[nodiscard]] int suppliesPacksBought() const noexcept { return totalSuppliesPacksBought_; }
+    [[nodiscard]] int perfectDaysCount() const noexcept { return achievements_.perfectDays(); }
+
     void logEvent(const std::string& msg) const;
 
     void run();
 };
 
-
 inline bool CarWash::addService(const WashService& s) {
     if (services_.size() >= MAX_SERV) return false;
     services_.push_back(s.clone());
+    achievements_.onStructureChanged(*this);
     return true;
 }
-
 
 inline bool CarWash::addBay(const WashBay& b) {
     if (bays_.size() >= MAX_BAYS) return false;
@@ -135,9 +145,9 @@ inline bool CarWash::addBay(const WashBay& b) {
     } else {
         bays_.back()->addDeluxe();
     }
+    achievements_.onStructureChanged(*this);
     return true;
 }
-
 
 inline void CarWash::run() {
     std::cout << "=== CARWASH TYCOON ===\n";
@@ -153,6 +163,12 @@ inline void CarWash::run() {
         showUpgrades();
         showReports();
 
+        adjustCash(400.0);
+        showShop();
+        buySupplies("water", 1);
+        buySupplies("shampoo", 1);
+        showShop();
+
         setPricingMode("balanced");
         nextCommand();
 
@@ -161,6 +177,7 @@ inline void CarWash::run() {
         } catch (const CarWashException&) {
         }
 
+        showAchievements();
         showDashboard();
     } catch (const CarWashException& ex) {
         std::cout << "Eroare: " << ex.what() << "\n";
@@ -201,6 +218,8 @@ inline void CarWash::run() {
                 showGoals();
             } else if (cmd == "upgrades") {
                 showUpgrades();
+            } else if (cmd == "achievements") {
+                showAchievements();
             } else if (cmd == "buyupgrade") {
                 int id = 0;
                 iss >> id;

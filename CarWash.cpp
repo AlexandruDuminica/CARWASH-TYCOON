@@ -8,17 +8,9 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
-#include <cstdlib>
 #include <iomanip>
 #include <iostream>
-#include <limits>
 #include <sstream>
-
-namespace {
-    [[maybe_unused]] auto kUseAddService = &CarWash::addService;
-    [[maybe_unused]] auto kUseAddBay     = &CarWash::addBay;
-    [[maybe_unused]] auto kUseRun        = &CarWash::run;
-}
 
 CarWash::CarWash(std::string n, Inventory inv, int openM, int closeM)
     : name_(std::move(n)),
@@ -30,20 +22,15 @@ CarWash::CarWash(std::string n, Inventory inv, int openM, int closeM)
         throw CarWashException("Ore program invalide");
     }
 
-    goals_.add(std::make_unique<ProfitGoal>(
-        500.0, "Castiga cel putin 500 EUR"));
-    goals_.add(std::make_unique<CarsServedGoal>(
-        50, "Spala cel putin 50 de masini"));
-    goals_.add(std::make_unique<RatingGoal>(
-        4.0, "Pastreaza satisfactia medie peste 4.0"));
+    goals_.add(std::make_unique<ProfitGoal>(500.0, "Castiga cel putin 500 EUR"));
+    goals_.add(std::make_unique<CarsServedGoal>(50, "Spala cel putin 50 de masini"));
+    goals_.add(std::make_unique<RatingGoal>(4.0, "Pastreaza satisfactia medie peste 4.0"));
 
     pricing_ = std::make_unique<BalancedPricing>();
-
     currentReport_.beginDay(day_);
 }
 
-bool CarWash::sameCaseInsensitive(const std::string& a,
-                                  const std::string& b) const {
+bool CarWash::sameCaseInsensitive(const std::string& a, const std::string& b) const {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); ++i) {
         char ca = static_cast<char>(std::tolower(static_cast<unsigned char>(a[i])));
@@ -120,8 +107,9 @@ void CarWash::endCurrentDay() {
                          ? dailySatisfactionSum_ / dailySatisfiedCustomers_
                          : 0.0;
 
-    currentReport_.finalize(dailyCarsServed_, dailyLost_,
-                            dailyAvgSat, dailyRevenue_);
+    achievements_.onDayEnd(*this, day_, dailyCarsServed_, dailyLost_, dailyRevenue_, dailyAvgSat);
+
+    currentReport_.finalize(dailyCarsServed_, dailyLost_, dailyAvgSat, dailyRevenue_);
     reports_.push_back(currentReport_);
 
     dailyCarsServed_ = 0;
@@ -160,7 +148,7 @@ void CarWash::simulateHour() {
     for (auto& s : services_)
         if (s) servicePtrs.push_back(s.get());
 
-    int attempts = static_cast<int>(bays_.size()) * 4 * speedFactor_;
+    int attempts = static_cast<int>(bays_.size()) * static_cast<int>(4 * speedFactor_);
     int processed = 0;
 
     for (int k = 0; k < attempts; ++k) {
@@ -174,6 +162,7 @@ void CarWash::simulateHour() {
             queue_.failOne();
             ++dailyLost_;
             reputation_.onLost();
+            achievements_.onLost(*this);
             demand_.fail();
             continue;
         }
@@ -198,17 +187,20 @@ void CarWash::simulateHour() {
 
                 processed++;
                 reputation_.onServed(sat);
+                achievements_.onServed(*this, 1, sat, chosen->price());
                 demand_.success();
             } else {
                 queue_.failOne();
                 ++dailyLost_;
                 reputation_.onLost();
+                achievements_.onLost(*this);
                 demand_.fail();
             }
         } catch (const CarWashException&) {
             queue_.failOne();
             ++dailyLost_;
             reputation_.onLost();
+            achievements_.onLost(*this);
             demand_.fail();
         }
     }
@@ -250,8 +242,7 @@ void CarWash::showServices() const {
 }
 
 void CarWash::showBays() const {
-    std::cout << "BAIE (" << bays_.size() << "), create="
-              << WashBay::totalBaysCreated() << "\n";
+    std::cout << "BAIE (" << bays_.size() << "), create=" << WashBay::totalBaysCreated() << "\n";
     for (const auto& b : bays_) {
         if (b) std::cout << "  " << *b << "\n";
     }
@@ -259,8 +250,7 @@ void CarWash::showBays() const {
 
 void CarWash::showStatus() const {
     std::cout << "=== STATUS ZIUA " << day_ << " ===\n";
-    std::cout << "Bani: " << std::fixed << std::setprecision(2)
-              << cash_ << " EUR\n";
+    std::cout << "Bani: " << std::fixed << std::setprecision(2) << cash_ << " EUR\n";
     std::cout << "Timp: " << nowMin_ << "/" << closeMin_ << "\n";
     std::cout << "Inventar: " << inv_ << "\n";
     showQueue();
@@ -308,7 +298,6 @@ void CarWash::showDashboard() const {
     std::cout << "================================\n";
 }
 
-
 void CarWash::showReports() const {
     if (reports_.empty()) {
         std::cout << "Nu exista inca rapoarte zilnice.\n";
@@ -320,24 +309,20 @@ void CarWash::showReports() const {
     }
 }
 
-
-
 void CarWash::showShop() const {
     std::cout << "=== SUPPLY SHOP ===\n";
     std::cout << "Ai: " << std::fixed << std::setprecision(2) << cash_ << " EUR\n";
     std::cout << "Inventar curent: " << inv_ << "\n\n";
-
-    std::cout << "Oferte (pack -> +cantitate):\n";
+    std::cout << "Oferte:\n";
     std::cout << "  water   : 20 EUR / pack -> +200 water\n";
     std::cout << "  shampoo : 25 EUR / pack -> +50 shampoo\n";
     std::cout << "  wax     : 30 EUR / pack -> +25 wax\n";
-    std::cout << "\nCumperi cu: buysupplies <water|shampoo|wax> [packs]\n";
+    std::cout << "Cumperi cu: buysupplies <water|shampoo|wax> [packs]\n";
 }
 
 void CarWash::buySupplies(const std::string& item, int packs) {
     if (packs <= 0) {
-        throw InvalidCommandException(
-            "Folosire: buysupplies <water|shampoo|wax> [packs]");
+        throw InvalidCommandException("Folosire: buysupplies <water|shampoo|wax> [packs]");
     }
 
     constexpr int kWaterPackQty = 200;
@@ -353,28 +338,33 @@ void CarWash::buySupplies(const std::string& item, int packs) {
         if (cash_ < totalCost) throw CarWashException("Nu ai suficienti bani pentru water");
         cash_ -= totalCost;
         inv_.addWater(kWaterPackQty * packs);
-        logEvent("Cumparare supplies: water x" + std::to_string(packs) +
-                 " (" + std::to_string(totalCost) + " EUR)");
+        totalSuppliesPacksBought_ += packs;
+        achievements_.onBuySupplies(*this, "water", packs, totalCost);
+        logEvent("Cumparare supplies: water x" + std::to_string(packs));
     } else if (sameCaseInsensitive(item, "shampoo")) {
         const double totalCost = kShampooPackCost * packs;
         if (cash_ < totalCost) throw CarWashException("Nu ai suficienti bani pentru shampoo");
         cash_ -= totalCost;
         inv_.addShampoo(kShampooPackQty * packs);
-        logEvent("Cumparare supplies: shampoo x" + std::to_string(packs) +
-                 " (" + std::to_string(totalCost) + " EUR)");
+        totalSuppliesPacksBought_ += packs;
+        achievements_.onBuySupplies(*this, "shampoo", packs, totalCost);
+        logEvent("Cumparare supplies: shampoo x" + std::to_string(packs));
     } else if (sameCaseInsensitive(item, "wax")) {
         const double totalCost = kWaxPackCost * packs;
         if (cash_ < totalCost) throw CarWashException("Nu ai suficienti bani pentru wax");
         cash_ -= totalCost;
         inv_.addWax(kWaxPackQty * packs);
-        logEvent("Cumparare supplies: wax x" + std::to_string(packs) +
-                 " (" + std::to_string(totalCost) + " EUR)");
+        totalSuppliesPacksBought_ += packs;
+        achievements_.onBuySupplies(*this, "wax", packs, totalCost);
+        logEvent("Cumparare supplies: wax x" + std::to_string(packs));
     } else {
-        throw InvalidCommandException(
-            "Resursa necunoscuta. Folosire: buysupplies <water|shampoo|wax> [packs]");
+        throw InvalidCommandException("Resursa necunoscuta. Folosire: buysupplies <water|shampoo|wax> [packs]");
     }
 }
 
+void CarWash::showAchievements() const {
+    achievements_.print(std::cout);
+}
 
 void CarWash::showHelp() const {
     std::cout
@@ -395,6 +385,7 @@ void CarWash::showHelp() const {
         << "  events         - afiseaza evenimentele zilei curente\n"
         << "  shop           - afiseaza oferta de supplies\n"
         << "  buysupplies R [packs] - cumpara supplies (water/shampoo/wax)\n"
+        << "  achievements   - lista achievements\n"
         << "  endrun         - termina simularea\n";
 }
 
@@ -408,9 +399,12 @@ void CarWash::buyUpgrade(int id) {
     if (u->cost() > cash_) {
         throw CarWashException("Nu ai suficienti bani pentru upgrade");
     }
-    cash_ -= u->cost();
+    const double cost = u->cost();
+    cash_ -= cost;
     u->apply(*this);
     purchased_.push_back(std::move(u));
+    upgradesBought_ += 1;
+    achievements_.onBuyUpgrade(*this, id, cost);
 }
 
 void CarWash::logEvent(const std::string& msg) const {
