@@ -49,13 +49,7 @@ int main() {
         game.addBay(b3);
 
 #ifdef GITHUB_ACTIONS
-        game.adjustCash(200.0);
-        game.showShop();
-        game.buySupplies("water", 1);
-        game.buySupplies("shampoo", 1);
-        game.showShop();
-        game.showDashboard();
-        std::cout << "CARWASH TYCOON CI smoke test OK\n";
+        game.run();
         return 0;
 #else
         game.run();

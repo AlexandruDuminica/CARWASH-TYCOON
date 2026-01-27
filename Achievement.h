@@ -61,7 +61,7 @@ protected:
 public:
     Achievement(std::string id, std::string name, std::string desc,
                 AchievementCategory cat, AchievementRarity rar,
-                int target, AchievementReward reward, bool hidden = false)
+                int target, const AchievementReward& reward, bool hidden = false)
         : id_(std::move(id)),
           name_(std::move(name)),
           desc_(std::move(desc)),
