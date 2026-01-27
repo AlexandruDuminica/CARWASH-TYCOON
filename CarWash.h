@@ -90,6 +90,10 @@ public:
     void showReports() const;
     void showHelp() const;
 
+    // --- NEW: Supplies shop ---
+    void showShop() const;
+    void buySupplies(const std::string& item, int packs = 1);
+
     void buyUpgrade(int id);
 
     void increaseSpeedFactor(double delta)   { speedFactor_     += delta; }
@@ -217,6 +221,31 @@ inline void CarWash::run() {
                 showReports();
             } else if (cmd == "events") {
                 events_.print(std::cout);
+            } else if (cmd == "shop") {
+                showShop();
+            } else if (cmd == "buysupplies") {
+                std::string item;
+                std::string packsStr;
+                iss >> item >> packsStr;
+                if (item.empty()) {
+                    throw InvalidCommandException(
+                        "Folosire: buysupplies <water|shampoo|wax> [packs]");
+                }
+                int packs = 1;
+                if (!packsStr.empty()) {
+                    try {
+                        size_t pos = 0;
+                        packs = std::stoi(packsStr, &pos);
+                        if (pos != packsStr.size()) {
+                            throw std::invalid_argument("junk");
+                        }
+                    } catch (const std::exception&) {
+                        throw InvalidCommandException(
+                            "Folosire: buysupplies <water|shampoo|wax> [packs]");
+                    }
+                }
+                buySupplies(item, packs);
+                showDashboard();
             } else if (cmd == "endrun") {
                 break;
             } else if (cmd.empty()) {

@@ -13,9 +13,6 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
-#include "CarWash.h"
-#include <iostream>
-
 
 namespace {
     [[maybe_unused]] auto kUseAddService = &CarWash::addService;
@@ -172,11 +169,6 @@ void CarWash::simulateHour() {
         auto customer = queue_.pop();
         if (!customer) break;
 
-        double b = customer->budget();
-        double imp = customer->impatience();
-        (void)b;
-        (void)imp;
-
         const WashService* chosen = customer->chooseService(servicePtrs);
         if (!chosen) {
             queue_.failOne();
@@ -325,6 +317,65 @@ void CarWash::showReports() const {
     }
 }
 
+// -------- NEW: SHOP + BUY SUPPLIES --------
+
+void CarWash::showShop() const {
+    std::cout << "=== SUPPLY SHOP ===\n";
+    std::cout << "Ai: " << std::fixed << std::setprecision(2) << cash_ << " EUR\n";
+    std::cout << "Inventar curent: " << inv_ << "\n\n";
+
+    std::cout << "Oferte (pack -> +cantitate):\n";
+    std::cout << "  water   : 20 EUR / pack -> +200 water\n";
+    std::cout << "  shampoo : 25 EUR / pack -> +50 shampoo\n";
+    std::cout << "  wax     : 30 EUR / pack -> +25 wax\n";
+    std::cout << "\nCumperi cu: buysupplies <water|shampoo|wax> [packs]\n";
+}
+
+void CarWash::buySupplies(const std::string& item, int packs) {
+    if (packs <= 0) {
+        throw InvalidCommandException(
+            "Folosire: buysupplies <water|shampoo|wax> [packs]");
+    }
+
+    // Oferta in pachete (simplu, evitand soft-lock de inventar)
+    constexpr int kWaterPackQty = 200;
+    constexpr int kShampooPackQty = 50;
+    constexpr int kWaxPackQty = 25;
+
+    constexpr double kWaterPackCost = 20.0;
+    constexpr double kShampooPackCost = 25.0;
+    constexpr double kWaxPackCost = 30.0;
+
+    double totalCost = 0.0;
+    if (sameCaseInsensitive(item, "water")) {
+        totalCost = kWaterPackCost * packs;
+        if (cash_ < totalCost) throw CarWashException("Nu ai suficienti bani pentru water");
+        cash_ -= totalCost;
+        inv_.addWater(kWaterPackQty * packs);
+        logEvent("Cumparare supplies: water x" + std::to_string(packs) +
+                 " (" + std::to_string(totalCost) + " EUR)");
+    } else if (sameCaseInsensitive(item, "shampoo")) {
+        totalCost = kShampooPackCost * packs;
+        if (cash_ < totalCost) throw CarWashException("Nu ai suficienti bani pentru shampoo");
+        cash_ -= totalCost;
+        inv_.addShampoo(kShampooPackQty * packs);
+        logEvent("Cumparare supplies: shampoo x" + std::to_string(packs) +
+                 " (" + std::to_string(totalCost) + " EUR)");
+    } else if (sameCaseInsensitive(item, "wax")) {
+        totalCost = kWaxPackCost * packs;
+        if (cash_ < totalCost) throw CarWashException("Nu ai suficienti bani pentru wax");
+        cash_ -= totalCost;
+        inv_.addWax(kWaxPackQty * packs);
+        logEvent("Cumparare supplies: wax x" + std::to_string(packs) +
+                 " (" + std::to_string(totalCost) + " EUR)");
+    } else {
+        throw InvalidCommandException(
+            "Resursa necunoscuta. Folosire: buysupplies <water|shampoo|wax> [packs]");
+    }
+}
+
+// ----------------------------------------
+
 void CarWash::showHelp() const {
     std::cout
         << "Comenzi:\n"
@@ -342,6 +393,8 @@ void CarWash::showHelp() const {
         << "  setpricing M   - seteaza strategia de preturi (aggressive|balanced|conservative)\n"
         << "  reports        - afiseaza rapoarte zilnice\n"
         << "  events         - afiseaza evenimentele zilei curente\n"
+        << "  shop           - afiseaza oferta de supplies\n"
+        << "  buysupplies R [packs] - cumpara supplies (water/shampoo/wax)\n"
         << "  endrun         - termina simularea\n";
 }
 
