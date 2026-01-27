@@ -20,6 +20,7 @@
 #include "PricingStrategy.h"
 #include "DailyReport.h"
 #include "AchievementManager.h"
+#include "Statistics.h"
 
 class CarWash {
     std::string name_;
@@ -97,6 +98,7 @@ public:
     void showHelp() const;
     void showShop() const;
     void showAchievements() const;
+    void showStats() const;
 
     void buyUpgrade(int id);
     void buySupplies(const std::string& item, int packs = 1);
@@ -178,6 +180,7 @@ inline void CarWash::run() {
         }
 
         showAchievements();
+        showStats();
         showDashboard();
     } catch (const CarWashException& ex) {
         std::cout << "Eroare: " << ex.what() << "\n";
@@ -220,6 +223,8 @@ inline void CarWash::run() {
                 showUpgrades();
             } else if (cmd == "achievements") {
                 showAchievements();
+            } else if (cmd == "stats") {
+                showStats();
             } else if (cmd == "buyupgrade") {
                 int id = 0;
                 iss >> id;

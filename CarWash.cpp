@@ -366,6 +366,11 @@ void CarWash::showAchievements() const {
     achievements_.print(std::cout);
 }
 
+void CarWash::showStats() const {
+    Statistics stats(reports_);
+    stats.print(std::cout);
+}
+
 void CarWash::showHelp() const {
     std::cout
         << "Comenzi:\n"
@@ -386,6 +391,7 @@ void CarWash::showHelp() const {
         << "  shop           - afiseaza oferta de supplies\n"
         << "  buysupplies R [packs] - cumpara supplies (water/shampoo/wax)\n"
         << "  achievements   - lista achievements\n"
+        << "  stats          - analytics detaliat\n"
         << "  endrun         - termina simularea\n";
 }
 

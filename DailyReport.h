@@ -22,8 +22,14 @@ public:
 
     void beginDay(int day);
     void addServiceSale(const std::string& name, double price);
-
     void finalize(int totalCars, int lost, double avgSat, double totalRevenue);
+
+    int day() const noexcept { return day_; }
+    int totalCars() const noexcept { return totalCars_; }
+    int lostCustomers() const noexcept { return lostCustomers_; }
+    double totalRevenue() const noexcept { return totalRevenue_; }
+    double avgSatisfaction() const noexcept { return avgSatisfaction_; }
+    const std::map<std::string, ServiceStats>& perService() const noexcept { return perService_; }
 
     void print(std::ostream& os) const;
 };
