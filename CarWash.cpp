@@ -258,19 +258,19 @@ void CarWash::nextCommand() {
 
 void CarWash::showServices() const {
     std::cout << "SERVICII:\n";
-    for (const auto &p: services_) {
+    for (const auto& p : services_) {
         if (!p) continue;
 
         std::string extra;
-        if (auto *wax = dynamic_cast<WaxService *>(p.get())) {
+        if (const auto* wax = dynamic_cast<const WaxService*>(p.get())) {
             extra = wax->nanoCoatingEnabled() ? " nano=ON" : " nano=OFF";
         }
 
         std::cout << "  - " << *p
-                << " kind=" << WashService::kindToString(p->kind())
-                << (p->isPremium() ? " [premium]" : "")
-                << extra
-                << "\n";
+                  << " kind=" << WashService::kindToString(p->kind())
+                  << (p->isPremium() ? " [premium]" : "")
+                  << extra
+                  << "\n";
     }
 }
 
