@@ -37,7 +37,7 @@ void WeatherEvent::print(std::ostream& os) const {
        << intensity_ << " (" << description_ << ")";
 }
 
-// HolidayEvent
+
 
 HolidayEvent::HolidayEvent()
     : Event("Holiday", "Zi de weekend / sarbatoare, trafic crescut") {}

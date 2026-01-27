@@ -90,7 +90,7 @@ public:
     void showReports() const;
     void showHelp() const;
 
-    // --- NEW: Supplies shop ---
+
     void showShop() const;
     void buySupplies(const std::string& item, int packs = 1);
 
@@ -119,14 +119,14 @@ public:
     void run();
 };
 
-// cppcheck-suppress unusedFunction
+
 inline bool CarWash::addService(const WashService& s) {
     if (services_.size() >= MAX_SERV) return false;
     services_.push_back(s.clone());
     return true;
 }
 
-// cppcheck-suppress unusedFunction
+
 inline bool CarWash::addBay(const WashBay& b) {
     if (bays_.size() >= MAX_BAYS) return false;
     bays_.push_back(std::make_unique<WashBay>(b));
@@ -138,7 +138,7 @@ inline bool CarWash::addBay(const WashBay& b) {
     return true;
 }
 
-// cppcheck-suppress unusedFunction
+
 inline void CarWash::run() {
     std::cout << "=== CARWASH TYCOON ===\n";
     showHelp();

@@ -317,7 +317,7 @@ void CarWash::showReports() const {
     }
 }
 
-// -------- NEW: SHOP + BUY SUPPLIES --------
+
 
 void CarWash::showShop() const {
     std::cout << "=== SUPPLY SHOP ===\n";
@@ -337,7 +337,6 @@ void CarWash::buySupplies(const std::string& item, int packs) {
             "Folosire: buysupplies <water|shampoo|wax> [packs]");
     }
 
-    // Oferta in pachete (simplu, evitand soft-lock de inventar)
     constexpr int kWaterPackQty = 200;
     constexpr int kShampooPackQty = 50;
     constexpr int kWaxPackQty = 25;
@@ -346,23 +345,22 @@ void CarWash::buySupplies(const std::string& item, int packs) {
     constexpr double kShampooPackCost = 25.0;
     constexpr double kWaxPackCost = 30.0;
 
-    double totalCost = 0.0;
     if (sameCaseInsensitive(item, "water")) {
-        totalCost = kWaterPackCost * packs;
+        const double totalCost = kWaterPackCost * packs;
         if (cash_ < totalCost) throw CarWashException("Nu ai suficienti bani pentru water");
         cash_ -= totalCost;
         inv_.addWater(kWaterPackQty * packs);
         logEvent("Cumparare supplies: water x" + std::to_string(packs) +
                  " (" + std::to_string(totalCost) + " EUR)");
     } else if (sameCaseInsensitive(item, "shampoo")) {
-        totalCost = kShampooPackCost * packs;
+        const double totalCost = kShampooPackCost * packs;
         if (cash_ < totalCost) throw CarWashException("Nu ai suficienti bani pentru shampoo");
         cash_ -= totalCost;
         inv_.addShampoo(kShampooPackQty * packs);
         logEvent("Cumparare supplies: shampoo x" + std::to_string(packs) +
                  " (" + std::to_string(totalCost) + " EUR)");
     } else if (sameCaseInsensitive(item, "wax")) {
-        totalCost = kWaxPackCost * packs;
+        const double totalCost = kWaxPackCost * packs;
         if (cash_ < totalCost) throw CarWashException("Nu ai suficienti bani pentru wax");
         cash_ -= totalCost;
         inv_.addWax(kWaxPackQty * packs);
@@ -374,7 +372,6 @@ void CarWash::buySupplies(const std::string& item, int packs) {
     }
 }
 
-// ----------------------------------------
 
 void CarWash::showHelp() const {
     std::cout

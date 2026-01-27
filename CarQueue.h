@@ -15,7 +15,7 @@ class CarQueue {
 public:
     CarQueue() = default;
 
-    // creeaza demandPerHour_ clienti random si ii pune in coada
+
     void generateRandomCustomers();
 
     bool empty() const { return q_.empty(); }

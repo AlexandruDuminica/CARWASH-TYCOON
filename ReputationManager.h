@@ -10,8 +10,8 @@ class ReputationManager {
     RunningStat<int> servedCount_{};
 
 public:
-    void onServed(double satisfaction);   // 0..5
-    void onLost();                        // client pierdut
+    void onServed(double satisfaction);
+    void onLost();
 
     double score() const noexcept { return score_; }
 

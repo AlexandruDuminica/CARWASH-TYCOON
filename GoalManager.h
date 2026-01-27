@@ -22,9 +22,9 @@ public:
 
     bool allAchieved() const;
 
-    // procent global realizat (0.0 .. 1.0)
+
     double completionRatio() const;
 
-    // afiseaza fiecare obiectiv cu procentul lui de progres
+
     void print(std::ostream& os, const CarWash& wash) const;
 };
