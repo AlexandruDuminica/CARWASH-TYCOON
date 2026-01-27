@@ -260,9 +260,16 @@ void CarWash::showServices() const {
     std::cout << "SERVICII:\n";
     for (const auto &p: services_) {
         if (!p) continue;
+
+        std::string extra;
+        if (auto *wax = dynamic_cast<WaxService *>(p.get())) {
+            extra = wax->nanoCoatingEnabled() ? " nano=ON" : " nano=OFF";
+        }
+
         std::cout << "  - " << *p
                 << " kind=" << WashService::kindToString(p->kind())
                 << (p->isPremium() ? " [premium]" : "")
+                << extra
                 << "\n";
     }
 }
@@ -444,15 +451,21 @@ void CarWash::run() {
         showBays();
         showGoals();
         showUpgrades();
-        showReports();
 
         adjustCash(600.0);
+        showShop();
+        buySupplies("water", 2);
+        buySupplies("shampoo", 2);
+        buySupplies("wax", 1);
+        showShop();
+
         buyUpgrade(4);
         showServices();
 
         setPricingMode("balanced");
         nextCommand();
 
+        showReports();
         showAchievements();
         showStats();
         showDashboard();
@@ -494,9 +507,8 @@ void CarWash::run() {
             } else if (cmd == "setpricing") {
                 std::string mode;
                 iss >> mode;
-                if (mode.empty())
-                    throw InvalidCommandException(
-                        "Folosire: setpricing <aggressive|balanced|conservative>");
+                if (mode.empty()) throw InvalidCommandException(
+                    "Folosire: setpricing <aggressive|balanced|conservative>");
                 setPricingMode(mode);
             } else if (cmd == "reports") showReports();
             else if (cmd == "events") events_.print(std::cout);
@@ -509,9 +521,8 @@ void CarWash::run() {
                 if (!packsStr.empty()) {
                     size_t pos = 0;
                     packs = std::stoi(packsStr, &pos);
-                    if (pos != packsStr.size())
-                        throw InvalidCommandException(
-                            "Folosire: buysupplies <water|shampoo|wax> [packs]");
+                    if (pos != packsStr.size()) throw InvalidCommandException(
+                        "Folosire: buysupplies <water|shampoo|wax> [packs]");
                 }
                 buySupplies(item, packs);
                 showDashboard();

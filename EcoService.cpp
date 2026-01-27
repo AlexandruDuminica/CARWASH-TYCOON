@@ -11,5 +11,5 @@ EcoService::EcoService(std::string name, int durationMin, double price,
 }
 
 std::unique_ptr<WashService> EcoService::clone() const {
-    return std::make_unique < EcoService > (*this);
+    return std::make_unique<EcoService>(*this);
 }
