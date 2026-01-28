@@ -1,5 +1,5 @@
-#include "EventManager.h"
-#include "CarWash.h"
+#include "../headers/EventManager.h"
+#include "../headers/CarWash.h"
 
 #include <cstdlib>
 #include <ctime>

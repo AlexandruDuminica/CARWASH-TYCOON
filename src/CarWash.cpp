@@ -1,9 +1,9 @@
-#include "CarWash.h"
-#include "BasicService.h"
-#include "DeluxeService.h"
-#include "WaxService.h"
-#include "EcoService.h"
-#include "Customer.h"
+#include "../headers/CarWash.h"
+#include "../headers/BasicService.h"
+#include "../headers/DeluxeService.h"
+#include "../headers/WaxService.h"
+#include "../headers/EcoService.h"
+#include "../headers/Customer.h"
 
 #include <algorithm>
 #include <cctype>
@@ -12,6 +12,19 @@
 #include <iostream>
 #include <sstream>
 
+/**
+ * @brief Constructs the main CarWash simulation instance.
+ *
+ * Initializes the car wash with a name, initial inventory, and opening/closing hours.
+ * Also sets up default goals, a default pricing strategy, and starts the daily report.
+ *
+ * @param n Car wash display name.
+ * @param inv Initial inventory snapshot.
+ * @param openM Opening time in minutes since midnight.
+ * @param closeM Closing time in minutes since midnight.
+ *
+ * @throws CarWashException If opening hour is not strictly before closing hour.
+ */
 CarWash::CarWash(std::string n, Inventory inv, int openM, int closeM)
     : name_(std::move(n)),
       inv_(inv),
@@ -30,6 +43,15 @@ CarWash::CarWash(std::string n, Inventory inv, int openM, int closeM)
     currentReport_.beginDay(day_);
 }
 
+/**
+ * @brief Case-insensitive equality check for two strings.
+ *
+ * Used to match commands and service names without requiring exact casing.
+ *
+ * @param a Left string.
+ * @param b Right string.
+ * @return true if strings are equal ignoring case; false otherwise.
+ */
 bool CarWash::sameCaseInsensitive(const std::string &a, const std::string &b) const {
     if (a.size() != b.size()) return false;
     for (size_t i = 0; i < a.size(); ++i) {
@@ -40,6 +62,12 @@ bool CarWash::sameCaseInsensitive(const std::string &a, const std::string &b) co
     return true;
 }
 
+/**
+ * @brief Finds the index of a service by name (case-insensitive).
+ *
+ * @param name Service display name to search for.
+ * @return Index in services_ if found; -1 otherwise.
+ */
 int CarWash::findService(const std::string &name) const {
     for (size_t i = 0; i < services_.size(); ++i) {
         if (services_[i] && sameCaseInsensitive(services_[i]->name(), name)) {
@@ -49,6 +77,15 @@ int CarWash::findService(const std::string &name) const {
     return -1;
 }
 
+/**
+ * @brief Adds a new wash service to the car wash.
+ *
+ * Stores a polymorphic clone of the provided service. If the Nano Coating upgrade
+ * has been activated, it is applied to all wax services immediately.
+ *
+ * @param s Service prototype to add (will be cloned).
+ * @return true if added successfully; false if service limit is reached.
+ */
 bool CarWash::addService(const WashService &s) {
     if (services_.size() >= MAX_SERV) return false;
     services_.push_back(s.clone());
@@ -57,6 +94,15 @@ bool CarWash::addService(const WashService &s) {
     return true;
 }
 
+/**
+ * @brief Adds a new wash bay to the car wash.
+ *
+ * The bay is copied into managed storage. A simple capability rule is applied
+ * based on bay id parity (for variety): even bays support wax, odd bays support deluxe.
+ *
+ * @param b Bay prototype to add (copied).
+ * @return true if added successfully; false if bay limit is reached.
+ */
 bool CarWash::addBay(const WashBay &b) {
     if (bays_.size() >= MAX_BAYS) return false;
     bays_.push_back(std::make_unique<WashBay>(b));
@@ -69,6 +115,13 @@ bool CarWash::addBay(const WashBay &b) {
     return true;
 }
 
+/**
+ * @brief Applies Nano Coating effect to all WaxService instances currently registered.
+ *
+ * This is a functional use of RTTI: Nano coating is a feature that exists only on
+ * WaxService. The simulation keeps services in a polymorphic container, therefore
+ * we safely detect WaxService with dynamic_cast and enable the upgrade behavior.
+ */
 void CarWash::applyNanoCoatingToWaxServices() {
     for (auto &s: services_) {
         if (!s) continue;
@@ -78,6 +131,12 @@ void CarWash::applyNanoCoatingToWaxServices() {
     }
 }
 
+/**
+ * @brief Enables Nano Coating upgrade globally.
+ *
+ * This flag persists and ensures future wax services will also have coating enabled
+ * (via addService calling applyNanoCoatingToWaxServices when already enabled).
+ */
 void CarWash::enableNanoCoating() {
     if (nanoCoatingEnabled_) return;
     nanoCoatingEnabled_ = true;
@@ -85,6 +144,20 @@ void CarWash::enableNanoCoating() {
     logEvent("Nano Coating enabled for Wax services");
 }
 
+/**
+ * @brief Attempts to book a number of cars for a named service across available bays.
+ *
+ * For each car, the function tries to find a bay that supports the service, checks
+ * time feasibility (must finish before closing), and checks inventory availability.
+ * If successful, the bay is booked and revenue is collected.
+ *
+ * @param serviceName Service name to book.
+ * @param cars Number of cars to schedule.
+ * @return Number of cars actually booked (may be less than requested).
+ *
+ * @throws InvalidServiceException If serviceName does not exist.
+ * @throws BookingException If cars <= 0.
+ */
 int CarWash::bookCars(const std::string &serviceName, int cars) {
     int si = findService(serviceName);
     if (si < 0) {
@@ -114,6 +187,11 @@ int CarWash::bookCars(const std::string &serviceName, int cars) {
     return booked;
 }
 
+/**
+ * @brief Applies a multiplicative factor to all service prices.
+ *
+ * @param factor Must be > 0.0; otherwise no changes are applied.
+ */
 void CarWash::adjustServicePrices(double factor) {
     if (factor <= 0.0) return;
     for (auto &s: services_) {
@@ -121,10 +199,20 @@ void CarWash::adjustServicePrices(double factor) {
     }
 }
 
+/**
+ * @brief Applies the currently configured pricing strategy.
+ *
+ * Delegates to the active PricingStrategy implementation.
+ */
 void CarWash::applyPricingStrategy() {
     if (pricing_) pricing_->apply(*this);
 }
 
+/**
+ * @brief Switches pricing strategy at runtime based on a string key.
+ *
+ * @param mode One of: \"aggressive\", \"conservative\", or any other value for balanced.
+ */
 void CarWash::setPricingMode(const std::string &mode) {
     if (mode == "aggressive") {
         pricing_ = std::make_unique<AggressivePricing>();
@@ -136,6 +224,13 @@ void CarWash::setPricingMode(const std::string &mode) {
     logEvent("Schimbare strategie preturi: " + pricing_->name());
 }
 
+/**
+ * @brief Finalizes the current day and resets per-day counters/state.
+ *
+ * Computes daily averages, triggers end-of-day hooks (achievements/goals/events),
+ * stores the DailyReport, resets bays and time to opening, advances the day index,
+ * and starts a new DailyReport for the next day.
+ */
 void CarWash::endCurrentDay() {
     double dailyAvgSat = dailySatisfiedCustomers_ > 0
                              ? dailySatisfactionSum_ / dailySatisfiedCustomers_
@@ -166,6 +261,13 @@ void CarWash::endCurrentDay() {
     std::cout << "--- Ziua a fost incheiata. Ziua curenta: " << day_ << " ---\n";
 }
 
+/**
+ * @brief Simulates one hour of gameplay.
+ *
+ * Advances time, generates demand/customers, repeatedly attempts to serve customers
+ * based on available bay capacity and speed factor, updates revenue and satisfaction,
+ * and applies demand adjustments. If closing time is reached, ends the current day.
+ */
 void CarWash::simulateHour() {
     nowMin_ += 60;
 
@@ -247,15 +349,27 @@ void CarWash::simulateHour() {
             << " cerere/h=" << queue_.demand() << "\n";
 }
 
+/**
+ * @brief Prints the current customer queue state.
+ */
 void CarWash::showQueue() const {
     std::cout << queue_ << "\n";
 }
 
+/**
+ * @brief Executes one simulation step and shows the dashboard afterwards.
+ */
 void CarWash::nextCommand() {
     simulateHour();
     showDashboard();
 }
 
+/**
+ * @brief Prints all registered services with type and premium flags.
+ *
+ * Additionally prints WaxService Nano Coating status using RTTI, because
+ * Nano Coating is a Wax-only feature.
+ */
 void CarWash::showServices() const {
     std::cout << "SERVICII:\n";
     for (const auto &p: services_) {
@@ -274,11 +388,17 @@ void CarWash::showServices() const {
     }
 }
 
+/**
+ * @brief Prints all bays and their current state.
+ */
 void CarWash::showBays() const {
     std::cout << "BAIE (" << bays_.size() << "), create=" << WashBay::totalBaysCreated() << "\n";
     for (const auto &b: bays_) if (b) std::cout << "  " << *b << "\n";
 }
 
+/**
+ * @brief Prints detailed status including cash, time, inventory, and queue.
+ */
 void CarWash::showStatus() const {
     std::cout << "=== STATUS ZIUA " << day_ << " ===\n";
     std::cout << "Bani: " << std::fixed << std::setprecision(2) << cash_ << " EUR\n";
@@ -287,11 +407,17 @@ void CarWash::showStatus() const {
     showQueue();
 }
 
+/**
+ * @brief Prints goal progress and whether all goals have been achieved.
+ */
 void CarWash::showGoals() const {
     goals_.print(std::cout, *this);
     if (goals_.allAchieved()) std::cout << "Toate obiectivele au fost atinse!\n";
 }
 
+/**
+ * @brief Prints purchased upgrades and the available upgrades catalog.
+ */
 void CarWash::showUpgrades() const {
     std::cout << "Upgrade-uri cumparate:\n";
     if (purchased_.empty()) {
@@ -307,6 +433,9 @@ void CarWash::showUpgrades() const {
     std::cout << "  4 -> " << NanoCoatingUpgrade() << "\n";
 }
 
+/**
+ * @brief Prints a compact gameplay dashboard with key KPIs.
+ */
 void CarWash::showDashboard() const {
     std::cout << "=========== DASHBOARD ==========\n";
     std::cout << "Ziua: " << day_ << "\n";
@@ -324,6 +453,9 @@ void CarWash::showDashboard() const {
     std::cout << "================================\n";
 }
 
+/**
+ * @brief Prints all stored daily reports.
+ */
 void CarWash::showReports() const {
     if (reports_.empty()) {
         std::cout << "Nu exista inca rapoarte zilnice.\n";
@@ -333,6 +465,9 @@ void CarWash::showReports() const {
     for (const auto &r: reports_) std::cout << r << "\n";
 }
 
+/**
+ * @brief Prints the supplies shop and current inventory/cash.
+ */
 void CarWash::showShop() const {
     std::cout << "=== SUPPLY SHOP ===\n";
     std::cout << "Ai: " << std::fixed << std::setprecision(2) << cash_ << " EUR\n";
@@ -344,6 +479,17 @@ void CarWash::showShop() const {
     std::cout << "Cumperi cu: buysupplies <water|shampoo|wax> [packs]\n";
 }
 
+/**
+ * @brief Purchases supply packs and updates the inventory and achievements.
+ *
+ * Valid items are: water, shampoo, wax. Each item has a fixed pack cost and fixed pack quantity.
+ *
+ * @param item Supply type.
+ * @param packs Number of packs to purchase (must be > 0).
+ *
+ * @throws InvalidCommandException If packs <= 0 or item is not recognized.
+ * @throws CarWashException If there is not enough cash to complete the purchase.
+ */
 void CarWash::buySupplies(const std::string &item, int packs) {
     if (packs <= 0) throw InvalidCommandException("Folosire: buysupplies <water|shampoo|wax> [packs]");
 
@@ -384,15 +530,24 @@ void CarWash::buySupplies(const std::string &item, int packs) {
     }
 }
 
+/**
+ * @brief Prints achievements status.
+ */
 void CarWash::showAchievements() const {
     achievements_.print(std::cout);
 }
 
+/**
+ * @brief Prints analytics computed from stored daily reports.
+ */
 void CarWash::showStats() const {
     Statistics stats(reports_);
     stats.print(std::cout);
 }
 
+/**
+ * @brief Prints the available command list and their usage.
+ */
 void CarWash::showHelp() const {
     std::cout
             << "Comenzi:\n"
@@ -417,6 +572,17 @@ void CarWash::showHelp() const {
             << "  endrun         - termina simularea\n";
 }
 
+/**
+ * @brief Purchases and applies an upgrade by id.
+ *
+ * Creates the corresponding Upgrade object, checks affordability, deducts cost,
+ * applies the upgrade effects, tracks purchase counters, and triggers achievements.
+ *
+ * @param id Upgrade id (1..4).
+ *
+ * @throws InvalidCommandException If id is not recognized.
+ * @throws CarWashException If there is not enough cash.
+ */
 void CarWash::buyUpgrade(int id) {
     std::unique_ptr<Upgrade> u;
     if (id == 1) u = std::make_unique<BaySpeedUpgrade>();
@@ -435,10 +601,22 @@ void CarWash::buyUpgrade(int id) {
     achievements_.onBuyUpgrade(*this, id, cost);
 }
 
+/**
+ * @brief Logs a gameplay message to standard output.
+ *
+ * @param msg Message text to log.
+ */
 void CarWash::logEvent(const std::string &msg) const {
     std::cout << "[LOG] " << msg << "\n";
 }
 
+/**
+ * @brief Main entry point for running the simulation loop.
+ *
+ * In CI (GITHUB_ACTIONS), runs a deterministic demo flow that exercises key features
+ * so static analysis does not report unused functions. In interactive mode, reads
+ * commands from stdin and executes them until 'endrun' or EOF.
+ */
 void CarWash::run() {
     std::cout << "=== CARWASH TYCOON ===\n";
     showHelp();

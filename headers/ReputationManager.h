@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RunningStat.h"
+#include "../headers/RunningStat.h"
 
 class ReputationManager {
     double score_{3.0}; // 0..5

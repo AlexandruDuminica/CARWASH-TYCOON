@@ -1,5 +1,5 @@
-#include "GoalManager.h"
-#include "CarWash.h"
+#include "../headers/GoalManager.h"
+#include "../headers/CarWash.h"
 
 #include <iomanip>
 #include <ostream>

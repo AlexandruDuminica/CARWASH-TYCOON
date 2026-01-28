@@ -1,4 +1,4 @@
-#include "DailyReport.h"
+#include "../headers/DailyReport.h"
 
 #include <ostream>
 #include <iomanip>

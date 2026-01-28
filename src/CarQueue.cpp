@@ -1,5 +1,5 @@
-#include "CarQueue.h"
-#include "Customer.h"
+#include "../headers/CarQueue.h"
+#include "../headers/Customer.h"
 
 #include <cstdlib>
 #include <ostream>

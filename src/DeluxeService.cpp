@@ -1,4 +1,4 @@
-#include "DeluxeService.h"
+#include "../headers/DeluxeService.h"
 
 DeluxeService::DeluxeService()
     : WashService("Deluxe", 35, 14.5, 120, 60, 0, 4.2, ServiceKind::Deluxe) {

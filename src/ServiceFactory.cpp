@@ -1,9 +1,9 @@
-#include "ServiceFactory.h"
+#include "../headers/ServiceFactory.h"
 
-#include "BasicService.h"
-#include "DeluxeService.h"
-#include "WaxService.h"
-#include "EcoService.h"
+#include "../headers/BasicService.h"
+#include "../headers/DeluxeService.h"
+#include "../headers/WaxService.h"
+#include "../headers/EcoService.h"
 
 static bool ieq(const std::string &a, const std::string &b) {
     if (a.size() != b.size()) return false;

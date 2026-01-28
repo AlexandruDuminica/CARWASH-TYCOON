@@ -1,4 +1,4 @@
-#include "Inventory.h"
+#include "../headers/Inventory.h"
 #include <ostream>
 
 bool Inventory::takeIfCan(const WashService &sp, int cars) {

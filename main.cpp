@@ -1,11 +1,11 @@
 #include <exception>
 #include <iostream>
 
-#include "CarWash.h"
-#include "CarWashExceptions.h"
-#include "Inventory.h"
-#include "ServiceFactory.h"
-#include "WashBay.h"
+#include "headers/CarWash.h"
+#include "headers/CarWashExceptions.h"
+#include "headers/Inventory.h"
+#include "headers/ServiceFactory.h"
+#include "headers/WashBay.h"
 
 int main() {
     try {

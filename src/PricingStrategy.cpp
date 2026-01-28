@@ -1,5 +1,5 @@
-#include "PricingStrategy.h"
-#include "CarWash.h"
+#include "../headers/PricingStrategy.h"
+#include "../headers/CarWash.h"
 
 void AggressivePricing::apply(CarWash &wash) {
     if (wash.currentDemand() < 3 || wash.averageSatisfaction() < 3.5) {

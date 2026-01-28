@@ -1,5 +1,5 @@
-#include "Customer.h"
-#include "WashService.h"
+#include "../headers/Customer.h"
+#include "../headers/WashService.h"
 
 #include <algorithm>
 #include <cmath>

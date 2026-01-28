@@ -1,5 +1,5 @@
-#include "Upgrade.h"
-#include "CarWash.h"
+#include "../headers/Upgrade.h"
+#include "../headers/CarWash.h"
 
 #include <ostream>
 

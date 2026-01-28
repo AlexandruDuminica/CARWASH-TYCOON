@@ -1,5 +1,5 @@
-#include "Goal.h"
-#include "CarWash.h"
+#include "../headers/Goal.h"
+#include "../headers/CarWash.h"
 
 #include <algorithm>
 

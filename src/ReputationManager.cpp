@@ -1,6 +1,6 @@
-#include "ReputationManager.h"
+#include "../headers/ReputationManager.h"
 
-#include "MathUtils.h"
+#include "../headers/MathUtils.h"
 
 #include <algorithm>
 

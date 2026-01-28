@@ -1,4 +1,4 @@
-#include "Statistics.h"
+#include "../headers/Statistics.h"
 
 #include <algorithm>
 #include <iomanip>
@@ -6,49 +6,108 @@
 #include <ostream>
 #include <vector>
 
+/**
+ * @file Statistics.cpp
+ * @brief Implements advanced analytics over a sequence of DailyReport objects.
+ */
+
+/**
+ * @brief Constructs a Statistics instance from a list of daily reports.
+ *
+ * @param reps Reports to analyze. Ownership is moved into the Statistics object.
+ */
 Statistics::Statistics(std::vector<DailyReport> reps)
     : reports_(std::move(reps)) {
 }
 
+/**
+ * @brief Safe division helper returning 0 when denominator is zero.
+ *
+ * @param a Numerator.
+ * @param b Denominator.
+ * @return a / b if b != 0, otherwise 0.
+ */
 double Statistics::safeDiv(double a, double b) {
     if (b == 0.0) return 0.0;
     return a / b;
 }
 
+/**
+ * @brief Returns the number of days (reports) available.
+ *
+ * @return Number of stored DailyReport entries.
+ */
 int Statistics::days() const noexcept {
     return static_cast<int>(reports_.size());
 }
 
+/**
+ * @brief Computes total cars served across all reports.
+ *
+ * @return Sum of totalCars() across all days.
+ */
 int Statistics::totalCars() const noexcept {
     int sum = 0;
     for (const auto &r: reports_) sum += r.totalCars();
     return sum;
 }
 
+/**
+ * @brief Computes total lost customers across all reports.
+ *
+ * @return Sum of lostCustomers() across all days.
+ */
 int Statistics::totalLost() const noexcept {
     int sum = 0;
     for (const auto &r: reports_) sum += r.lostCustomers();
     return sum;
 }
 
+/**
+ * @brief Computes total revenue across all reports.
+ *
+ * @return Sum of totalRevenue() across all days.
+ */
 double Statistics::totalRevenue() const noexcept {
     double sum = 0.0;
     for (const auto &r: reports_) sum += r.totalRevenue();
     return sum;
 }
 
+/**
+ * @brief Computes average cars served per day.
+ *
+ * @return totalCars / days (0 if no days).
+ */
 double Statistics::avgCarsPerDay() const noexcept {
     return safeDiv(static_cast<double>(totalCars()), static_cast<double>(days()));
 }
 
+/**
+ * @brief Computes average lost customers per day.
+ *
+ * @return totalLost / days (0 if no days).
+ */
 double Statistics::avgLostPerDay() const noexcept {
     return safeDiv(static_cast<double>(totalLost()), static_cast<double>(days()));
 }
 
+/**
+ * @brief Computes average revenue per day.
+ *
+ * @return totalRevenue / days (0 if no days).
+ */
 double Statistics::avgRevenuePerDay() const noexcept {
     return safeDiv(totalRevenue(), static_cast<double>(days()));
 }
 
+/**
+ * @brief Computes weighted average satisfaction across days.
+ *
+ * Each day's average satisfaction is weighted by the number of cars served that day.
+ *
+ * @return Weighted average satisfaction (0 if total weight is zero).
+ */
 double Statistics::avgSatisfactionWeighted() const noexcept {
     double weighted = 0.0;
     double weight = 0.0;
@@ -60,6 +119,11 @@ double Statistics::avgSatisfactionWeighted() const noexcept {
     return safeDiv(weighted, weight);
 }
 
+/**
+ * @brief Returns the day index with maximum revenue.
+ *
+ * @return Day number of the best revenue day; 0 if no reports exist.
+ */
 int Statistics::bestDayByRevenue() const noexcept {
     if (reports_.empty()) return 0;
     auto it = std::max_element(reports_.begin(), reports_.end(),
@@ -69,6 +133,11 @@ int Statistics::bestDayByRevenue() const noexcept {
     return it->day();
 }
 
+/**
+ * @brief Returns the day index with minimum revenue.
+ *
+ * @return Day number of the worst revenue day; 0 if no reports exist.
+ */
 int Statistics::worstDayByRevenue() const noexcept {
     if (reports_.empty()) return 0;
     auto it = std::min_element(reports_.begin(), reports_.end(),
@@ -78,6 +147,11 @@ int Statistics::worstDayByRevenue() const noexcept {
     return it->day();
 }
 
+/**
+ * @brief Returns the day index with maximum average satisfaction.
+ *
+ * @return Day number of the best satisfaction day; 0 if no reports exist.
+ */
 int Statistics::bestDayBySatisfaction() const noexcept {
     if (reports_.empty()) return 0;
     auto it = std::max_element(reports_.begin(), reports_.end(),
@@ -87,6 +161,11 @@ int Statistics::bestDayBySatisfaction() const noexcept {
     return it->day();
 }
 
+/**
+ * @brief Returns the day index with minimum average satisfaction.
+ *
+ * @return Day number of the worst satisfaction day; 0 if no reports exist.
+ */
 int Statistics::worstDayBySatisfaction() const noexcept {
     if (reports_.empty()) return 0;
     auto it = std::min_element(reports_.begin(), reports_.end(),
@@ -96,6 +175,11 @@ int Statistics::worstDayBySatisfaction() const noexcept {
     return it->day();
 }
 
+/**
+ * @brief Returns the day index with minimum number of lost customers.
+ *
+ * @return Day number of the best (lowest lost) day; 0 if no reports exist.
+ */
 int Statistics::bestDayByLost() const noexcept {
     if (reports_.empty()) return 0;
     auto it = std::min_element(reports_.begin(), reports_.end(),
@@ -105,6 +189,11 @@ int Statistics::bestDayByLost() const noexcept {
     return it->day();
 }
 
+/**
+ * @brief Returns the day index with maximum number of lost customers.
+ *
+ * @return Day number of the worst (highest lost) day; 0 if no reports exist.
+ */
 int Statistics::worstDayByLost() const noexcept {
     if (reports_.empty()) return 0;
     auto it = std::max_element(reports_.begin(), reports_.end(),
@@ -114,6 +203,14 @@ int Statistics::worstDayByLost() const noexcept {
     return it->day();
 }
 
+/**
+ * @brief Aggregates per-service statistics across a set of reports.
+ *
+ * For each service name, this function sums total cars and total revenue.
+ *
+ * @param reps Reports to aggregate.
+ * @return Map from service name to aggregated metrics.
+ */
 std::map<std::string, ServiceAggregate> Statistics::aggregateServices(const std::vector<DailyReport> &reps) {
     std::map<std::string, ServiceAggregate> agg;
     for (const auto &r: reps) {
@@ -128,6 +225,12 @@ std::map<std::string, ServiceAggregate> Statistics::aggregateServices(const std:
     return agg;
 }
 
+/**
+ * @brief Returns the top-k services by total revenue across all days.
+ *
+ * @param k Maximum number of entries to return.
+ * @return Vector of (serviceName, aggregate) pairs sorted by revenue desc.
+ */
 std::vector<std::pair<std::string, ServiceAggregate> > Statistics::topServicesByRevenue(int k) const {
     if (k <= 0) return {};
     auto agg = aggregateServices(reports_);
@@ -138,6 +241,12 @@ std::vector<std::pair<std::string, ServiceAggregate> > Statistics::topServicesBy
     return v;
 }
 
+/**
+ * @brief Returns the top-k services by total cars served across all days.
+ *
+ * @param k Maximum number of entries to return.
+ * @return Vector of (serviceName, aggregate) pairs sorted by cars desc.
+ */
 std::vector<std::pair<std::string, ServiceAggregate> > Statistics::topServicesByCars(int k) const {
     if (k <= 0) return {};
     auto agg = aggregateServices(reports_);
@@ -148,6 +257,11 @@ std::vector<std::pair<std::string, ServiceAggregate> > Statistics::topServicesBy
     return v;
 }
 
+/**
+ * @brief Returns a revenue time series aligned with the report order.
+ *
+ * @return Vector of daily revenue values.
+ */
 std::vector<double> Statistics::revenueSeries() const {
     std::vector<double> s;
     s.reserve(reports_.size());
@@ -155,6 +269,11 @@ std::vector<double> Statistics::revenueSeries() const {
     return s;
 }
 
+/**
+ * @brief Returns a satisfaction time series aligned with the report order.
+ *
+ * @return Vector of daily average satisfaction values.
+ */
 std::vector<double> Statistics::satisfactionSeries() const {
     std::vector<double> s;
     s.reserve(reports_.size());
@@ -162,6 +281,11 @@ std::vector<double> Statistics::satisfactionSeries() const {
     return s;
 }
 
+/**
+ * @brief Returns a lost-customers time series aligned with the report order.
+ *
+ * @return Vector of daily lost customer counts.
+ */
 std::vector<int> Statistics::lostSeries() const {
     std::vector<int> s;
     s.reserve(reports_.size());
@@ -169,6 +293,14 @@ std::vector<int> Statistics::lostSeries() const {
     return s;
 }
 
+/**
+ * @brief Prints a detailed statistics report to an output stream.
+ *
+ * The report includes totals, averages, best/worst days, min/max values and simple
+ * trend estimates based on (last - first) over the series.
+ *
+ * @param os Output stream.
+ */
 void Statistics::print(std::ostream &os) const {
     os << "=== STATISTICS ===\n";
     os << "Days: " << days() << "\n";

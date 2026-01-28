@@ -1,5 +1,5 @@
-#include "WashBay.h"
-#include "WashService.h"
+#include "../headers/WashBay.h"
+#include "../headers/WashService.h"
 #include <algorithm>
 #include <ostream>
 
