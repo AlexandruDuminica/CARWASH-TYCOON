@@ -15,10 +15,12 @@ class AchievementManager {
     int totalUpgrades_{0};
     int perfectDays_{0};
 
-    void dispatch(CarWash &game, const AchievementEvent &ev);
+    void dispatch(CarWash &game, const AchievementEvent &ev) const;
 
 public:
     AchievementManager();
+
+    void dispatch(CarWash &game, const AchievementEvent &ev);
 
     void onServed(CarWash &game, int cars, double satisfaction, double revenue);
 
