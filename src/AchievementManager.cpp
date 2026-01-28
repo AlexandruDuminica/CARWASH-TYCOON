@@ -382,6 +382,7 @@ AchievementManager::AchievementManager() {
         4.80, AchievementReward{200.0, 3, 0.05, 0.10}, true));
 }
 
+
 /**
  * @brief Dispatches a gameplay event to all achievements.
  *
